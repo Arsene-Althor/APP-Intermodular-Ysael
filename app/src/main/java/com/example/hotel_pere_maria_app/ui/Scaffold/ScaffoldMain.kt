@@ -13,7 +13,8 @@ fun ScaffoldMain(){
     val ScaffoldnavController = rememberNavController()
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        bottomBar = {NavigationBarState(ScaffoldnavController)}
+        bottomBar = {NavigationBarState(ScaffoldnavController)},
+        topBar = {TopAppBarState(ScaffoldnavController )}
     ) { innerpadding ->
         NavigationScaffold(ScaffoldnavController, modifier = Modifier.padding(innerpadding))
     }

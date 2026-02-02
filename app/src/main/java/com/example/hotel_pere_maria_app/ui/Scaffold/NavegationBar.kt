@@ -2,6 +2,7 @@ package com.example.hotel_pere_maria_app.ui.Scaffold
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
@@ -12,8 +13,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.example.hotel_pere_maria_app.ui.Navegation.Navitems
 import com.example.hotel_pere_maria_app.ui.Navegation.Routes
 
@@ -21,7 +24,7 @@ import com.example.hotel_pere_maria_app.ui.Navegation.Routes
 fun NavigationBarView(items: List<Navitems>, currentRoute : String, onItemSelected: (String) -> Unit){
     NavigationBar(
         contentColor = Color.White,
-        containerColor = Color.Red
+        containerColor = Color.Blue
     ) {
         for(item in items){
             NavigationBarItem(
@@ -48,7 +51,7 @@ fun NavigationBarView(items: List<Navitems>, currentRoute : String, onItemSelect
 @Composable
 fun NavigationBarState(navController : NavHostController) {
     val items = listOf<Navitems>(
-        Navitems("Favorites", Icons.Default.Favorite, Routes.Favorites.route),
+        Navitems("ADD", Icons.Default.Add, Routes.Add.route),
         Navitems("Home", Icons.Default.Home, Routes.Home.route),
         Navitems("Profile", Icons.Default.AccountCircle, Routes.User.route)
     )
@@ -64,4 +67,10 @@ fun NavigationBarState(navController : NavHostController) {
     }
    NavigationBarView(items = items, currentRoute = currentRoute, onItemSelected = {route:String -> onItemSelected(route)})
 
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun NavegationPreview(){
+    ScaffoldMain()
 }

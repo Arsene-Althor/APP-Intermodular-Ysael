@@ -45,7 +45,7 @@ fun NavigationScaffold(navigationController: NavHostController , modifier: Modif
         composable(Routes.User.route){
             Home()
         }
-        composable(Routes.Favorites.route){
+        composable(Routes.Add.route){
             Home()
         }
     }
