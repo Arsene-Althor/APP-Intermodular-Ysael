@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemColors
@@ -19,12 +20,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.hotel_pere_maria_app.ui.Navegation.Navitems
 import com.example.hotel_pere_maria_app.ui.Navegation.Routes
+import com.example.ui.theme.AppTheme
 
 @Composable
 fun NavigationBarView(items: List<Navitems>, currentRoute : String, onItemSelected: (String) -> Unit){
     NavigationBar(
-        contentColor = Color.White,
-        containerColor = Color.Blue
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
     ) {
         for(item in items){
             NavigationBarItem(
@@ -34,13 +36,13 @@ fun NavigationBarView(items: List<Navitems>, currentRoute : String, onItemSelect
                 onClick = {onItemSelected(item.route)},
                 alwaysShowLabel = false,
                 colors = NavigationBarItemColors(
-                    selectedIconColor = Color.White,
-                    selectedTextColor = Color.White,
-                    selectedIndicatorColor = Color.DarkGray,
-                    unselectedIconColor = Color.White,
-                    unselectedTextColor = Color.White,
-                    disabledIconColor = Color.Gray.copy(alpha = 0.4f),
-                    disabledTextColor = Color.Gray.copy(alpha = 0.4f)
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    selectedIndicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 )
             )
         }
@@ -72,5 +74,7 @@ fun NavigationBarState(navController : NavHostController) {
 @Preview(showSystemUi = true)
 @Composable
 fun NavegationPreview(){
-    ScaffoldMain()
+    AppTheme(dynamicColor = false) {
+        ScaffoldMain()
+    }
 }
