@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.example.hotel_pere_maria_app.ui.Scaffold.ScaffoldMain
+import com.example.hotel_pere_maria_app.ui.Views.Add
 import com.example.hotel_pere_maria_app.ui.Views.Home
 import com.example.hotel_pere_maria_app.ui.Views.Login
 
@@ -46,7 +47,7 @@ fun NavigationScaffold(navigationController: NavHostController , modifier: Modif
             Home()
         }
         composable(Routes.Add.route){
-            Home()
+            Add()
         }
     }
 }

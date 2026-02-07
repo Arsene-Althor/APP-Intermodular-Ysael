@@ -74,7 +74,7 @@ fun NavigationBarState(navController : NavHostController) {
 @Preview(showSystemUi = true)
 @Composable
 fun NavegationPreview(){
-    AppTheme(dynamicColor = false) {
+    AppTheme(dynamicColor = false, darkTheme = false) {
         ScaffoldMain()
     }
 }
