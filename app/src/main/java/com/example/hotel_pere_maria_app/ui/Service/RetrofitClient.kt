@@ -15,4 +15,8 @@ object RetrofitClient {
     val reservationService: ReservationService by lazy {
         retrofit.create(ReservationService::class.java)
     }
+
+    val authService: AuthService by lazy {
+        retrofit.create(AuthService:: class.java)
+    }
 }
