@@ -58,4 +58,12 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    //Dependencias para MVVM
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    //Dependencias para Conexión a API
+    implementation("com.squareup.retrofit2:retrofit:2.9.0") // Retrofit: El motor para las peticiones HTTP
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Convierte JSON a objetos Kotlin
+    // OkHttp Logging Interceptor: (Opcional pero recomendado)
+    // Permite ver en el Logcat qué está enviando y recibiendo la API.
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }
