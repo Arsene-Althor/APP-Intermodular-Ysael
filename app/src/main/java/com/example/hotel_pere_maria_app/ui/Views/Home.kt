@@ -11,17 +11,23 @@ import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.hotel_pere_maria_app.ui.Models.Reservation
+import com.example.hotel_pere_maria_app.ui.ViewModels.HomeViewModel
 import com.example.ui.theme.AppTheme
 
 @Composable
 fun Home() {
-    var reservas = listOf("asdfasdf","asdfasdf","asdfasdf","asdafdasd","asdfasdf","asdfasfd","asdfasd")
+    val homeviewModel : HomeViewModel = viewModel()
+    val reservas by homeviewModel.listMisReservas.collectAsState(initial = emptyList())
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -145,7 +151,7 @@ fun SinproxEstancia(){
 }
 
 @Composable
-fun CardReserva(reserva: String) {
+fun CardReserva(reserva: Reservation) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -163,7 +169,7 @@ fun CardReserva(reserva: String) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "RSV-000001",
+                    text = reserva.reservation_id,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -179,7 +185,7 @@ fun CardReserva(reserva: String) {
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Habitación Doble Deluxe",
+                text = reserva.room_id,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -194,7 +200,7 @@ fun CardReserva(reserva: String) {
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    text = "12/05/2026 - 13/05/2026",
+                    text = "${reserva.check_in} - ${reserva.check_out}",
                     style = MaterialTheme.typography.labelSmall
                 )
             }
@@ -219,10 +225,3 @@ fun ServiceItem(icon: ImageVector, label: String) {
     }
 }
 
-@Preview(showSystemUi = true)
-@Composable
-fun previewHome(){
-    AppTheme(dynamicColor = false) {
-        Home()
-    }
-}
