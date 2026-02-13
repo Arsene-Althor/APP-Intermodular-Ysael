@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -63,7 +64,7 @@ fun Home() {
         ) {
             item{
                 Text(text = "Proxima estancia", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                if(true /* Si hay proxima estancia */){
+                if(false /* Si hay proxima estancia */){
                     proximaEstancia()
                 }else{
                     SinproxEstancia()
@@ -71,8 +72,26 @@ fun Home() {
                 Text(text = "Todas tus estancias", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
 
-            items(reservas){ reserva ->
-                CardReserva(reserva)
+            if(reservas.isEmpty()){
+                item {
+                    Box(modifier = Modifier.fillParentMaxHeight(0.7f),
+                        contentAlignment = Alignment.Center
+                        ){
+                        Text(
+                            text = "¿A qué esperas para tu primera reserva?",
+                            modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
+            }else{
+
+                items(reservas){ reserva ->
+                    CardReserva(reserva)
+                }
+
             }
         }
 
@@ -144,7 +163,7 @@ fun SinproxEstancia(){
             Spacer(Modifier.width(12.dp))
             Text(
                 text = "No tienes reservas próximas. ¿A que esperas?",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium
             )
         }
     }
@@ -223,5 +242,11 @@ fun ServiceItem(icon: ImageVector, label: String) {
         Spacer(Modifier.height(4.dp))
         Text(text = label, style = MaterialTheme.typography.labelSmall)
     }
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun HomePreview(){
+    Home()
 }
 

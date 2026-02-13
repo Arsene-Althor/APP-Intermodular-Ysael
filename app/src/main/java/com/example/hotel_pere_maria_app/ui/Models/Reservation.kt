@@ -24,7 +24,7 @@ object ReservationRepository {
 
     suspend fun fetchReservations(){
         try {
-            val response = RetrofitClient.reservationService.getAll()
+            val response = RetrofitClient.reservationService.getMine()
             if(response.isSuccessful){
                 val listReservas = response.body()
                 if(listReservas != null){
