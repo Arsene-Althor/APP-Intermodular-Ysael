@@ -1,5 +1,6 @@
 package com.example.hotel_pere_maria_app.ui.Navegation
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
@@ -34,7 +35,7 @@ fun NavigationLogin(navigationController: NavHostController){
 }
 
 @Composable
-fun NavigationScaffold(navigationController: NavHostController , modifier: Modifier){
+fun NavigationScaffold(navigationController: NavHostController , modifier: Modifier, snackbarHostState: SnackbarHostState){
     NavHost(
         navController = navigationController,
         startDestination = Routes.Home.route,
@@ -47,7 +48,7 @@ fun NavigationScaffold(navigationController: NavHostController , modifier: Modif
             Home()
         }
         composable(Routes.Add.route){
-            Add()
+            Add(snackbarHostState)
         }
     }
 }
