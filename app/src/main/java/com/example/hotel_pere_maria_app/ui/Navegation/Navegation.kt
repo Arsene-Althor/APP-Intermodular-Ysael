@@ -10,6 +10,7 @@ import com.example.hotel_pere_maria_app.ui.Scaffold.ScaffoldMain
 import com.example.hotel_pere_maria_app.ui.Views.Add
 import com.example.hotel_pere_maria_app.ui.Views.Home
 import com.example.hotel_pere_maria_app.ui.Views.Login
+import com.example.hotel_pere_maria_app.ui.Views.ModReserva
 
 @Composable
 fun NavigationLogin(navigationController: NavHostController){
@@ -42,13 +43,18 @@ fun NavigationScaffold(navigationController: NavHostController , modifier: Modif
         modifier = modifier
     ){
         composable(Routes.Home.route){
-            Home()
+            Home(onNavigate = {ruta ->
+                navigationController.navigate(ruta)
+            })
         }
         composable(Routes.User.route){
-            Home()
+            Home({})
         }
         composable(Routes.Add.route){
             Add(snackbarHostState)
+        }
+        composable(Routes.ModReserva.route){
+            ModReserva(snackbarHostState)
         }
     }
 }

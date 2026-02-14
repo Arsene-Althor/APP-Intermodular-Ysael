@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -28,10 +29,17 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 @Composable
-fun Home() {
+fun Home(onNavigate: (String) -> Unit) {
     val homeviewModel : HomeViewModel = viewModel()
     val reservas by homeviewModel.listMisReservas.collectAsState(initial = emptyList())
     val reservaReciente by homeviewModel.proximaReserva.collectAsState(initial = null)
+
+    LaunchedEffect(Unit) {
+        homeviewModel.navigationEvent.collect { ruta ->
+            onNavigate(ruta)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -92,7 +100,7 @@ fun Home() {
             }else{
 
                 items(reservas){ reserva ->
-                    CardReserva(reserva)
+                    CardReserva(reserva, {homeviewModel.onEditarReservaClick()})
                 }
 
             }
@@ -175,7 +183,7 @@ fun SinproxEstancia(){
 }
 
 @Composable
-fun CardReserva(reserva: Reservation) {
+fun CardReserva(reserva: Reservation, onEditarReserva: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -198,7 +206,7 @@ fun CardReserva(reserva: Reservation) {
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
-                IconButton (onClick = {},modifier = Modifier.size(14.dp)){
+                IconButton (onClick = {onEditarReserva()},modifier = Modifier.size(14.dp)){
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Editar reserva",
@@ -254,6 +262,6 @@ fun ServiceItem(icon: ImageVector, label: String) {
 @Preview(showSystemUi = true)
 @Composable
 fun HomePreview(){
-    Home()
+    Home({})
 }
 
