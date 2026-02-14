@@ -14,7 +14,7 @@ data class Reservation(
     val check_in: Date,
     val check_out: Date,
     val price: Number,
-    val celation_date: Date,
+    val cancelation_date: Date,
     val createdBy:String
 )
 
@@ -24,7 +24,7 @@ object ReservationRepository {
 
     suspend fun fetchReservations(){
         try {
-            val response = RetrofitClient.reservationService.getAll()
+            val response = RetrofitClient.reservationService.getMine()
             if(response.isSuccessful){
                 val listReservas = response.body()
                 if(listReservas != null){

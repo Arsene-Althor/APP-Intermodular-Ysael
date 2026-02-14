@@ -17,17 +17,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hotel_pere_maria_app.ui.Models.Reservation
 import com.example.hotel_pere_maria_app.ui.ViewModels.HomeViewModel
-import com.example.ui.theme.AppTheme
+import kotlinx.coroutines.flow.StateFlow
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
 fun Home() {
     val homeviewModel : HomeViewModel = viewModel()
     val reservas by homeviewModel.listMisReservas.collectAsState(initial = emptyList())
+    val reservaReciente by homeviewModel.proximaReserva.collectAsState(initial = null)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -63,16 +67,34 @@ fun Home() {
         ) {
             item{
                 Text(text = "Proxima estancia", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                if(true /* Si hay proxima estancia */){
-                    proximaEstancia()
+                if(reservaReciente != null){
+                    proximaEstancia(reservaReciente!!)
                 }else{
                     SinproxEstancia()
                 }
                 Text(text = "Todas tus estancias", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
 
-            items(reservas){ reserva ->
-                CardReserva(reserva)
+            if(reservas.isEmpty()){
+                item {
+                    Box(modifier = Modifier.fillParentMaxHeight(0.7f),
+                        contentAlignment = Alignment.Center
+                        ){
+                        Text(
+                            text = "¿A qué esperas para tu primera reserva?",
+                            modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                }
+            }else{
+
+                items(reservas){ reserva ->
+                    CardReserva(reserva)
+                }
+
             }
         }
 
@@ -80,7 +102,7 @@ fun Home() {
 }
 
 @Composable
-fun proximaEstancia(){
+fun proximaEstancia(reserva: Reservation){
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -103,19 +125,21 @@ fun proximaEstancia(){
 
             Column(modifier = Modifier.padding(10.dp)) {
                 Text(
-                    text = "RSV-000001",
+                    text = reserva.reservation_id,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Habitación Doble Deluxe",
+                    text = reserva.room_id,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "05/06/2026 - 07/06/2026",
+                    text = "${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(reserva.check_in)}" +
+                            " - " +
+                            "${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(reserva.check_out)}",
                     style = MaterialTheme.typography.labelSmall,
                 )
             }
@@ -144,7 +168,7 @@ fun SinproxEstancia(){
             Spacer(Modifier.width(12.dp))
             Text(
                 text = "No tienes reservas próximas. ¿A que esperas?",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium
             )
         }
     }
@@ -200,7 +224,9 @@ fun CardReserva(reserva: Reservation) {
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    text = "${reserva.check_in} - ${reserva.check_out}",
+                    text = "${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(reserva.check_in)}" +
+                            " - " +
+                            "${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(reserva.check_out)}",
                     style = MaterialTheme.typography.labelSmall
                 )
             }
@@ -223,5 +249,11 @@ fun ServiceItem(icon: ImageVector, label: String) {
         Spacer(Modifier.height(4.dp))
         Text(text = label, style = MaterialTheme.typography.labelSmall)
     }
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun HomePreview(){
+    Home()
 }
 
