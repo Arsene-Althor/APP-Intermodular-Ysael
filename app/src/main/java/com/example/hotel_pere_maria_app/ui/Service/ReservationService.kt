@@ -16,4 +16,13 @@ interface ReservationService{
 
     @POST("reservation/add")
     suspend fun addReservation(@Body datos: Map<String, String>): Response<Map<String, String>>
+
+    @POST("reservation/cancel")
+    suspend fun cancelReservation(@Body datos: Map<String, String>):Response<Map<String, Any>>
+
+    @POST("reservation/getCancelationPrice")
+    suspend fun cancelationPrice(@Body datos: Map<String, String>): Response<Map<String, String>>
+
+    @PUT("reservation/update")
+    suspend fun updateReservation(@Body datos : Map<String, String>): Response<Map<String, Any>>
 }

@@ -24,7 +24,11 @@ fun ScaffoldMain(){
     val currentRoute = navBackStackEntry?.destination?.route
 
     val rutasNoScaflod = listOf(Routes.ModReserva.route)
-    val mostrarScafold = currentRoute !in rutasNoScaflod
+    val mostrarScafold = when {
+        currentRoute == null -> true
+        currentRoute.startsWith(Routes.ModReserva.route) -> false
+        else -> true
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

@@ -37,4 +37,8 @@ object ReservationRepository {
             Log.e("API_ERROR", "Error al cargar productos: ${e.message}")
         }
     }
+
+    fun getReservationById(id:String): Reservation?{
+        return _reservations.value.find { it.reservation_id == id }
+    }
 }

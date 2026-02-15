@@ -29,14 +29,21 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 @Composable
-fun Home(onNavigate: (String) -> Unit) {
+fun Home(onNavigate: (String) -> Unit, snackbarHostState : SnackbarHostState) {
     val homeviewModel : HomeViewModel = viewModel()
     val reservas by homeviewModel.listMisReservas.collectAsState(initial = emptyList())
     val reservaReciente by homeviewModel.proximaReserva.collectAsState(initial = null)
+    val state by homeviewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
         homeviewModel.navigationEvent.collect { ruta ->
             onNavigate(ruta)
+        }
+    }
+    LaunchedEffect(state.mensajeRespuesta) {
+        state.mensajeRespuesta?.let {
+            snackbarHostState.showSnackbar(it)
+            homeviewModel.limpiarMensaje()
         }
     }
 
@@ -100,7 +107,7 @@ fun Home(onNavigate: (String) -> Unit) {
             }else{
 
                 items(reservas){ reserva ->
-                    CardReserva(reserva, {homeviewModel.onEditarReservaClick()})
+                    CardReserva(reserva, {homeviewModel.onEditarReservaClick(reserva.reservation_id, reserva)})
                 }
 
             }
@@ -238,6 +245,15 @@ fun CardReserva(reserva: Reservation, onEditarReserva: () -> Unit) {
                     style = MaterialTheme.typography.labelSmall
                 )
             }
+            if(reserva.cancelation_date != null){
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Fecha cancel: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(reserva.cancelation_date)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
         }
     }
 }
@@ -257,11 +273,5 @@ fun ServiceItem(icon: ImageVector, label: String) {
         Spacer(Modifier.height(4.dp))
         Text(text = label, style = MaterialTheme.typography.labelSmall)
     }
-}
-
-@Preview(showSystemUi = true)
-@Composable
-fun HomePreview(){
-    Home({})
 }
 

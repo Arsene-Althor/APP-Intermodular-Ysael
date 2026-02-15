@@ -45,16 +45,18 @@ fun NavigationScaffold(navigationController: NavHostController , modifier: Modif
         composable(Routes.Home.route){
             Home(onNavigate = {ruta ->
                 navigationController.navigate(ruta)
-            })
+            }, snackbarHostState = snackbarHostState)
         }
         composable(Routes.User.route){
-            Home({})
+            Home({},snackbarHostState)
         }
         composable(Routes.Add.route){
             Add(snackbarHostState)
         }
-        composable(Routes.ModReserva.route){
-            ModReserva(snackbarHostState)
+        composable("${Routes.ModReserva.route}/{reservaId}"){
+            backStackEntry ->
+            val reservaId = backStackEntry.arguments?.getString("reservaId")?: ""
+            ModReserva(snackbarHostState, reservaId, onBack = {navigationController.popBackStack()})
         }
     }
 }

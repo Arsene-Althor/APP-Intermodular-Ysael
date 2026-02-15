@@ -10,11 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -25,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,21 +39,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hotel_pere_maria_app.R
-import com.example.hotel_pere_maria_app.ui.Navegation.NavegationMain
-import com.example.hotel_pere_maria_app.ui.ViewModels.AddViewModel
-import com.example.hotel_pere_maria_app.ui.ViewModels.AdduiState
+import com.example.hotel_pere_maria_app.ui.ViewModels.ModReservaViewModel
+import com.example.hotel_pere_maria_app.ui.ViewModels.ModuiState
 import com.example.ui.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ModReserva(snackbarHostState : SnackbarHostState) {
-    val addViewModel: AddViewModel = viewModel()
-    val state by addViewModel.uiState.collectAsState()
+fun ModReserva(snackbarHostState : SnackbarHostState, reservaId: String, onBack: () -> Unit) {
+    val ModViewModel: ModReservaViewModel = viewModel()
+    val state by ModViewModel.uiState.collectAsState()
 
     LaunchedEffect(state.mensajeRespuesta) {
         state.mensajeRespuesta?.let {
             snackbarHostState.showSnackbar(it)
-            addViewModel.limpiarMensaje()
+            ModViewModel.limpiarMensaje()
+        }
+    }
+    LaunchedEffect(key1 = reservaId) {
+        ModViewModel.cargarDatos()
+    }
+    LaunchedEffect(Unit) {
+        ModViewModel.navigationEvent.collect {
+            onBack()
         }
     }
 
@@ -83,7 +85,7 @@ fun ModReserva(snackbarHostState : SnackbarHostState) {
             ) {
                 Column (horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "RSV-000001",
+                        text = state.reservation_id,
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
@@ -105,17 +107,17 @@ fun ModReserva(snackbarHostState : SnackbarHostState) {
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Box(modifier = Modifier.weight(1f)) {
                             FechaInputSimple(label = "Entrada", fecha = state.check_in, onFechaSelected = {
                                     millis ->
-                                addViewModel.onDateSelected(millis, true)
+                                ModViewModel.onDateSelected(millis, true)
                             })
                         }
                         Box(modifier = Modifier.weight(1f)) {
                             FechaInputSimple(label = "Salida", fecha = state.check_out, onFechaSelected = {
                                     millis ->
-                                addViewModel.onDateSelected(millis, false)
+                                ModViewModel.onDateSelected(millis, false)
                             })
                         }
                     }
@@ -132,14 +134,13 @@ fun ModReserva(snackbarHostState : SnackbarHostState) {
                         value = state.room,
                         onValueChange = {
                                 newText ->
-                            addViewModel.onRoomChanged(newText)
+                            ModViewModel.onRoomChanged(newText)
                         },
                         readOnly = false,
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Habitación") },
                         leadingIcon = { Icon(painter = painterResource(id = R.drawable.outline_bedroom_parent_24), contentDescription = null) }
                     )
-
 
                 }
 
@@ -158,7 +159,7 @@ fun ModReserva(snackbarHostState : SnackbarHostState) {
                         Column() {
                             Text(text = "Total anterior", style = MaterialTheme.typography.labelLarge)
                             Text(
-                                text = "${state.price} €",
+                                text = "${state.priceActual} €",
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -167,7 +168,7 @@ fun ModReserva(snackbarHostState : SnackbarHostState) {
                         Column(horizontalAlignment = Alignment.End) {
                             Text(text = "Total modificado", style = MaterialTheme.typography.labelLarge)
                             Text(
-                                text = "${state.price} €",
+                                text = "${state.priceNuevo} €",
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -177,7 +178,7 @@ fun ModReserva(snackbarHostState : SnackbarHostState) {
                 }
 
                 Button(
-                    onClick = { addViewModel.onShowResumen(true)},
+                    onClick = { ModViewModel.onShowResumenMod(true)},
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -188,7 +189,7 @@ fun ModReserva(snackbarHostState : SnackbarHostState) {
                 }
 
                 Button(
-                    onClick = { addViewModel.onShowResumen(true)},
+                    onClick = { ModViewModel.onShowResumenCancel(true)},
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -202,13 +203,23 @@ fun ModReserva(snackbarHostState : SnackbarHostState) {
                     Text(text = "CANCELAR RESERVA", fontWeight = FontWeight.Bold)
                 }
 
-                if(state.showResumen){
+                if(state.showResumenMod){
                     SummaryBottomConfirmar(
                         state = state,
-                        onDismiss = { addViewModel.onShowResumen(false) },
+                        onDismiss = { ModViewModel.onShowResumenMod(false) },
                         onConfirm = {
-                            addViewModel.onShowResumen(false)
-                            addViewModel.realizarReserva()
+                            ModViewModel.onShowResumenMod(false)
+                            ModViewModel.modificarReserva()
+                        }
+                    )
+                }
+                if(state.showResumenCancel){
+                    SummaryBottomCancel(
+                        state = state,
+                        onDismiss = { ModViewModel.onShowResumenCancel(false) },
+                        onConfirm = {
+                            ModViewModel.onShowResumenMod(false)
+                            ModViewModel.cancelarReserva()
                         }
                     )
                 }
@@ -220,7 +231,7 @@ fun ModReserva(snackbarHostState : SnackbarHostState) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SummaryBottomConfirmar(state: AdduiState, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+fun SummaryBottomConfirmar(state: ModuiState, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     val sheetState = rememberModalBottomSheetState()
 
     ModalBottomSheet(
@@ -250,7 +261,7 @@ fun SummaryBottomConfirmar(state: AdduiState, onDismiss: () -> Unit, onConfirm: 
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Total a pagar:", style = MaterialTheme.typography.titleMedium)
-                Text("${String.format("%.2f", state.price)}€",
+                Text("${String.format("%.2f", state.priceNuevo-state.priceActual)}€",
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.ExtraBold)
@@ -267,18 +278,56 @@ fun SummaryBottomConfirmar(state: AdduiState, onDismiss: () -> Unit, onConfirm: 
     }
 }
 
-@Preview(showSystemUi = true)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ModReservaPreview(){
-    val snackbarHostState = remember { SnackbarHostState() }
+fun SummaryBottomCancel(state: ModuiState, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    val sheetState = rememberModalBottomSheetState()
 
-    AppTheme(dynamicColor = false) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ModReserva(snackbarHostState = snackbarHostState )
+            Text("Confirmar Cancelación",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.error,
+                fontWeight = FontWeight.Bold
+            )
+
+            HorizontalDivider()
+
+            ResumenRow(label = "Habitación:", value = state.room)
+            ResumenRow(label = "Check-in:", value = state.check_in)
+            ResumenRow(label = "Check-out:", value = state.check_out)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Devolución: :", style = MaterialTheme.typography.titleMedium)
+                Text("${String.format("%.2f", state.priceActual - state.precioCancel)}€",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.ExtraBold)
+            }
+
+            Button(
+                onClick = onConfirm,
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                )
+            ) {
+                Text("Cancelar ahora")
+            }
         }
     }
-
 }
