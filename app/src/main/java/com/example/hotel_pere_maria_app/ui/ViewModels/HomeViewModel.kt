@@ -26,6 +26,9 @@ class HomeViewModel: ViewModel() {
     private val _uiState = MutableStateFlow(HomeState())
     val uiState : StateFlow<HomeState> = _uiState
 
+    private val _uiEvent = Channel<HomeUiEvent>()
+    val uiEvent = _uiEvent.receiveAsFlow()
+
     private val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
     fun onEditarReservaClick(id:String, reserva: Reservation) {
@@ -60,9 +63,38 @@ class HomeViewModel: ViewModel() {
     fun limpiarMensaje(){
         _uiState.update { it.copy(mensajeRespuesta = null, errorRespusta = false) }
     }
+
+    fun abrirMapa() {
+        viewModelScope.launch {
+            _uiEvent.send(HomeUiEvent.OpenMap("geo:0,0?q=IES+Pere+Maria+Orts+i+Bosch+Benidorm"))
+        }
+    }
+
+    fun llamarHotel() {
+        viewModelScope.launch {
+            _uiEvent.send(HomeUiEvent.MakeCall("tel:965000000"))
+        }
+    }
+    fun enviarCorreoHotel() {
+        viewModelScope.launch {
+            _uiEvent.send(
+                HomeUiEvent.SendEmail(
+                    address = "info@hotelperemaria.com",
+                    subject = "Consulta desde la App Móvil"
+                )
+            )
+        }
+    }
+
 }
 
 data class HomeState(
     val mensajeRespuesta:String? = null,
     val errorRespusta: Boolean = false
 )
+
+sealed class HomeUiEvent {
+    data class MakeCall(val uri: String) : HomeUiEvent()
+    data class OpenMap(val uri: String) : HomeUiEvent()
+    data class SendEmail(val address: String, val subject: String) : HomeUiEvent()
+}
