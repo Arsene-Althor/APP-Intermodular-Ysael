@@ -66,4 +66,6 @@ dependencies {
     // OkHttp Logging Interceptor: (Opcional pero recomendado)
     // Permite ver en el Logcat qué está enviando y recibiendo la API.
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    // Coil: Carga de imágenes (para foto de perfil)
+    implementation("io.coil-kt:coil-compose:2.5.0")
 }

@@ -12,15 +12,20 @@ import androidx.navigation.compose.rememberNavController
 import com.example.hotel_pere_maria_app.ui.Navegation.NavigationScaffold
 
 @Composable
-fun ScaffoldMain(){
+fun ScaffoldMain(onLogout: () -> Unit = {}) {
     val ScaffoldnavController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState ) },
-        bottomBar = {NavigationBarState(ScaffoldnavController)},
-        topBar = {TopAppBarState(ScaffoldnavController )}
+            modifier = Modifier.fillMaxSize(),
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+            bottomBar = { NavigationBarState(ScaffoldnavController) },
+            topBar = { TopAppBarState(ScaffoldnavController) }
     ) { innerpadding ->
-        NavigationScaffold(ScaffoldnavController, modifier = Modifier.padding(innerpadding), snackbarHostState )
+        NavigationScaffold(
+                ScaffoldnavController,
+                modifier = Modifier.padding(innerpadding),
+                snackbarHostState,
+                onLogout = onLogout
+        )
     }
 }

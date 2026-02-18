@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.hotel_pere_maria_app.ui.Navegation.NavegationMain
+import com.example.hotel_pere_maria_app.ui.Service.ThemeManager
 import com.example.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,13 +21,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AppTheme(dynamicColor = false) {
+            val isDark by ThemeManager.isDarkTheme.collectAsState()
+            AppTheme(darkTheme = isDark, dynamicColor = false) {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    NavegationMain()
-                }
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                ) { NavegationMain() }
             }
         }
     }
@@ -32,6 +34,6 @@ class MainActivity : ComponentActivity() {
 
 @Preview(showSystemUi = true)
 @Composable
-fun GreetingPreview(){
+fun GreetingPreview() {
     NavegationMain()
 }

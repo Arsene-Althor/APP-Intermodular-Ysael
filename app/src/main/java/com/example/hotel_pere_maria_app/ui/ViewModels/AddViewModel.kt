@@ -23,7 +23,7 @@ class AddViewModel: ViewModel() {
     private var check_in:Date? = null
     private  var check_out:Date? = null
 
-    private val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+private val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
     fun onDateSelected(millis: Long?,isCheckin: Boolean){
         try {
