@@ -8,25 +8,26 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.hotel_pere_maria_app.ui.Scaffold.ScaffoldMain
 import com.example.hotel_pere_maria_app.ui.Views.Add
+import com.example.hotel_pere_maria_app.ui.Views.ForgotPassword
 import com.example.hotel_pere_maria_app.ui.Views.Home
 import com.example.hotel_pere_maria_app.ui.Views.Login
 import com.example.hotel_pere_maria_app.ui.Views.Profile
 import com.example.hotel_pere_maria_app.ui.Views.Register
 
 @Composable
-fun NavigationLogin(navigationController: NavHostController){
-    NavHost(
-        navController = navigationController,
-        startDestination = Routes.Login.route
-    ){
-        composable(Routes.Login.route){
+fun NavigationLogin(navigationController: NavHostController) {
+    NavHost(navController = navigationController, startDestination = Routes.Login.route) {
+        composable(Routes.Login.route) {
             Login(
                     onLoginSuccess = {
                         navigationController.navigate(Routes.Scaffold.route) {
                             popUpTo(Routes.Login.route) { inclusive = true }
                         }
                     },
-                    onNavigateToRegister = { navigationController.navigate(Routes.Register.route) }
+                    onNavigateToRegister = { navigationController.navigate(Routes.Register.route) },
+                    onNavigateToForgotPassword = {
+                        navigationController.navigate(Routes.ForgotPassword.route)
+                    }
             )
         }
 
@@ -50,6 +51,11 @@ fun NavigationLogin(navigationController: NavHostController){
                         }
                     }
             )
+        }
+
+        // Pantalla de recuperar contraseña
+        composable(Routes.ForgotPassword.route) {
+            ForgotPassword(onNavigateToLogin = { navigationController.popBackStack() })
         }
     }
 }
