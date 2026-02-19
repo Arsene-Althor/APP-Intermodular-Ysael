@@ -1,5 +1,7 @@
 package com.example.hotel_pere_maria_app.ui.Views
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -11,27 +13,74 @@ import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hotel_pere_maria_app.ui.Models.Reservation
+import com.example.hotel_pere_maria_app.ui.ViewModels.HomeUiEvent
 import com.example.hotel_pere_maria_app.ui.ViewModels.HomeViewModel
 import kotlinx.coroutines.flow.StateFlow
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 @Composable
-fun Home() {
+fun Home(onNavigate: (String) -> Unit, snackbarHostState : SnackbarHostState) {
     val homeviewModel : HomeViewModel = viewModel()
     val reservas by homeviewModel.listMisReservas.collectAsState(initial = emptyList())
     val reservaReciente by homeviewModel.proximaReserva.collectAsState(initial = null)
+    val state by homeviewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        homeviewModel.navigationEvent.collect { ruta ->
+            onNavigate(ruta)
+        }
+    }
+    LaunchedEffect(state.mensajeRespuesta) {
+        state.mensajeRespuesta?.let {
+            snackbarHostState.showSnackbar(it)
+            homeviewModel.limpiarMensaje()
+        }
+    }
+    LaunchedEffect(Unit) {
+        homeviewModel.uiEvent.collect { action ->
+            when(action){
+                is HomeUiEvent.OpenMap -> {
+                    val intent = Intent(Intent.ACTION_VIEW,Uri.parse(action.uri)).apply {
+                        setPackage("com.google.android.apps.maps")
+                    }
+                    try {
+                        context.startActivity(intent)
+                    }catch (e: Exception){
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(action.uri)))
+                    }
+                }
+                is HomeUiEvent.MakeCall ->{
+                    context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse(action.uri)))
+                }
+                is HomeUiEvent.SendEmail ->{
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:${action.address}?subject=${Uri.encode(action.subject)}")
+                    }
+                    try {
+                        context.startActivity(intent)
+                    }catch (e: Exception){
+                        snackbarHostState.showSnackbar("No tienes una aplicación de correo configurada")
+                    }
+                }
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -54,9 +103,9 @@ fun Home() {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    ServiceItem(Icons.Default.LocationOn, "Mapa")
-                    ServiceItem(Icons.Default.Phone, "Llamar")
-                    ServiceItem(Icons.Default.Email, "Correo")
+                    ServiceItem(Icons.Default.LocationOn, "Mapa",{homeviewModel.abrirMapa()})
+                    ServiceItem(Icons.Default.Phone, "Llamar", {homeviewModel.llamarHotel()})
+                    ServiceItem(Icons.Default.Email, "Correo",{homeviewModel.enviarCorreoHotel()})
                 }
             }
         }
@@ -92,7 +141,7 @@ fun Home() {
             }else{
 
                 items(reservas){ reserva ->
-                    CardReserva(reserva)
+                    CardReserva(reserva, {homeviewModel.onEditarReservaClick(reserva.reservation_id, reserva)})
                 }
 
             }
@@ -175,7 +224,7 @@ fun SinproxEstancia(){
 }
 
 @Composable
-fun CardReserva(reserva: Reservation) {
+fun CardReserva(reserva: Reservation, onEditarReserva: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -198,7 +247,7 @@ fun CardReserva(reserva: Reservation) {
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )
-                IconButton (onClick = {},modifier = Modifier.size(14.dp)){
+                IconButton (onClick = {onEditarReserva()},modifier = Modifier.size(14.dp)){
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Editar reserva",
@@ -230,17 +279,27 @@ fun CardReserva(reserva: Reservation) {
                     style = MaterialTheme.typography.labelSmall
                 )
             }
+            if(reserva.cancelation_date != null){
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Fecha cancel: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(reserva.cancelation_date)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
         }
     }
 }
 
 @Composable
-fun ServiceItem(icon: ImageVector, label: String) {
+fun ServiceItem(icon: ImageVector, label: String, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
             modifier = Modifier.size(56.dp),
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.secondaryContainer
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            onClick = {onClick()}
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
@@ -249,11 +308,5 @@ fun ServiceItem(icon: ImageVector, label: String) {
         Spacer(Modifier.height(4.dp))
         Text(text = label, style = MaterialTheme.typography.labelSmall)
     }
-}
-
-@Preview(showSystemUi = true)
-@Composable
-fun HomePreview(){
-    Home()
 }
 

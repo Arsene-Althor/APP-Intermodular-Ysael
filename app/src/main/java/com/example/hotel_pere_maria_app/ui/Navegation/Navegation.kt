@@ -11,6 +11,7 @@ import com.example.hotel_pere_maria_app.ui.Views.Add
 import com.example.hotel_pere_maria_app.ui.Views.ForgotPassword
 import com.example.hotel_pere_maria_app.ui.Views.Home
 import com.example.hotel_pere_maria_app.ui.Views.Login
+import com.example.hotel_pere_maria_app.ui.Views.ModReserva
 import com.example.hotel_pere_maria_app.ui.Views.Profile
 import com.example.hotel_pere_maria_app.ui.Views.Register
 
@@ -68,12 +69,23 @@ fun NavigationScaffold(
         onLogout: () -> Unit
 ) {
     NavHost(
-            navController = navigationController,
-            startDestination = Routes.Home.route,
-            modifier = modifier
-    ) {
-        composable(Routes.Home.route) { Home() }
+        navController = navigationController,
+        startDestination = Routes.Home.route,
+        modifier = modifier
+    ){
+        composable(Routes.Home.route){
+            Home(onNavigate = {ruta ->
+                navigationController.navigate(ruta)
+            }, snackbarHostState = snackbarHostState)
+        }
+        composable(Routes.Add.route){
+            Add(snackbarHostState)
+        }
+        composable("${Routes.ModReserva.route}/{reservaId}"){
+            backStackEntry ->
+            val reservaId = backStackEntry.arguments?.getString("reservaId")?: ""
+            ModReserva(snackbarHostState, reservaId, onBack = {navigationController.popBackStack()})
+        }
         composable(Routes.User.route) { Profile(onLogout = onLogout) }
-        composable(Routes.Add.route) { Add(snackbarHostState) }
     }
 }

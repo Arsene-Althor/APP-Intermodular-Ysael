@@ -35,7 +35,7 @@ fun FechaInputSimple(label: String, fecha: String, onFechaSelected: (Long?) -> U
         leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(18.dp)) },
         modifier = Modifier.fillMaxWidth().clickable{showDialog = true},
         enabled = false,
-        textStyle = MaterialTheme.typography.bodyMedium
+        textStyle = MaterialTheme.typography.bodySmall
     )
     if (showDialog) {
         DatePickerDialog(
