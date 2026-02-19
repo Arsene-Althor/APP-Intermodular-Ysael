@@ -17,7 +17,7 @@ import com.example.hotel_pere_maria_app.ui.Navegation.NavigationScaffold
 import com.example.hotel_pere_maria_app.ui.Navegation.Routes
 
 @Composable
-fun ScaffoldMain(){
+fun ScaffoldMain(onLogout: () -> Unit = {}) {
     val ScaffoldnavController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     val navBackStackEntry by ScaffoldnavController.currentBackStackEntryAsState()
@@ -43,6 +43,6 @@ fun ScaffoldMain(){
             }
     ) { innerpadding ->
         val pading = if(mostrarScafold) innerpadding else PaddingValues(0.dp)
-        NavigationScaffold(ScaffoldnavController, modifier = Modifier.padding(pading), snackbarHostState )
+        NavigationScaffold(ScaffoldnavController, modifier = Modifier.padding(pading), snackbarHostState,onLogout = onLogout )
     }
 }
