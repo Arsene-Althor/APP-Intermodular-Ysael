@@ -7,6 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.hotel_pere_maria_app.ui.Service.RetrofitClient
 import com.example.hotel_pere_maria_app.ui.Service.SessionManager
 import com.example.hotel_pere_maria_app.ui.Service.ThemeManager
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,12 +51,35 @@ class ProfileViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
+    // Formateador para mostrar fechas en formato dd/MM/yyyy
+    private val displayFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
     init {
         loadUserData()
         // Observar el estado del tema
         viewModelScope.launch {
             ThemeManager.isDarkTheme.collect { isDark ->
                 _uiState.update { it.copy(isDarkTheme = isDark) }
+            }
+        }
+    }
+
+    // Convierte una fecha ISO (ej: "2000-01-15T00:00:00.000Z") a formato dd/MM/yyyy
+    private fun formatDate(isoDate: String?): String {
+        if (isoDate.isNullOrBlank()) return ""
+        return try {
+            val isoFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            isoFormatter.timeZone = TimeZone.getTimeZone("UTC")
+            val date = isoFormatter.parse(isoDate)
+            if (date != null) displayFormatter.format(date) else isoDate
+        } catch (e: Exception) {
+            // Si falla el parseo ISO, intentar con formato solo fecha
+            try {
+                val simpleFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val date = simpleFormatter.parse(isoDate)
+                if (date != null) displayFormatter.format(date) else isoDate
+            } catch (e2: Exception) {
+                isoDate // Si no se puede parsear, devolver el valor original
             }
         }
     }
@@ -67,7 +93,7 @@ class ProfileViewModel : ViewModel() {
                     surname = user.surname,
                     email = user.email,
                     dni = user.dni,
-                    birthDate = user.birthDate ?: "",
+                    birthDate = formatDate(user.birthDate),
                     city = user.city ?: "",
                     gender = user.gender,
                     role = user.role,
