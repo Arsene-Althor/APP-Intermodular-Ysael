@@ -62,7 +62,7 @@ fun Login(
                 singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
                 value = uiState.password,
@@ -74,10 +74,7 @@ fun Login(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Link para recuperar contraseña
-        TextButton(onClick = onNavigateToForgotPassword) { Text("¿Olvidaste tu contraseña?") }
 
-        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
                 onClick = { viewModel.login() },
@@ -104,6 +101,11 @@ fun Login(
                     modifier = Modifier.padding(top = 8.dp)
             )
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Link para recuperar contraseña
+        TextButton(onClick = onNavigateToForgotPassword) { Text("¿Olvidaste tu contraseña?") }
 
         // Link a Registro
         TextButton(onClick = onNavigateToRegister, modifier = Modifier.padding(top = 12.dp)) {
