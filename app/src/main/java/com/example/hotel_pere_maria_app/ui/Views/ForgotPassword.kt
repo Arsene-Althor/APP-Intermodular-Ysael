@@ -15,31 +15,21 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.hotel_pere_maria_app.ui.ViewModels.LoginState
-import com.example.hotel_pere_maria_app.ui.ViewModels.LoginViewModel
+import com.example.hotel_pere_maria_app.ui.ViewModels.ForgotPasswordState
+import com.example.hotel_pere_maria_app.ui.ViewModels.ForgotPasswordViewModel
 
 @Composable
-fun Login(
-        onLoginSuccess: () -> Unit,
-        onNavigateToRegister: () -> Unit = {},
-        onNavigateToForgotPassword: () -> Unit = {},
-        viewModel: LoginViewModel = viewModel()
+fun ForgotPassword(
+        onNavigateToLogin: () -> Unit,
+        viewModel: ForgotPasswordViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
-    LaunchedEffect(uiState.loginStatus) {
-        if (uiState.loginStatus is LoginState.Success) {
-            onLoginSuccess()
-        }
-    }
 
     Column(
             modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -47,13 +37,23 @@ fun Login(
             verticalArrangement = Arrangement.Center
     ) {
         Text(
-                text = "Iniciar Sesión",
+                text = "Recuperar Contraseña",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Texto explicativo
+        Text(
+                text = "Introduce tu email y te enviaremos una contraseña temporal",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Campo de email
         OutlinedTextField(
                 value = uiState.email,
                 onValueChange = { viewModel.onEmailChange(it) },
@@ -62,54 +62,49 @@ fun Login(
                 singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        OutlinedTextField(
-                value = uiState.password,
-                onValueChange = { viewModel.onPasswordChange(it) },
-                label = { Text("Contraseña") },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation(),
-                singleLine = true
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-
-
+        // Boton enviar
         Button(
-                onClick = { viewModel.login() },
+                onClick = { viewModel.recoverPassword() },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = uiState.loginStatus !is LoginState.Loading
+                enabled = uiState.status !is ForgotPasswordState.Loading
         ) {
-            if (uiState.loginStatus is LoginState.Loading) {
+            if (uiState.status is ForgotPasswordState.Loading) {
                 CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp
                 )
             } else {
-                Text("Iniciar Sesión")
+                Text("Enviar Contraseña Temporal")
             }
         }
 
-        if (uiState.loginStatus is LoginState.Error) {
-            val mensaje = (uiState.loginStatus as LoginState.Error).message
-            Text(
-                    text = mensaje,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 8.dp)
-            )
+        // Mensajes de estado (exito o error)
+        when (val status = uiState.status) {
+            is ForgotPasswordState.Success -> {
+                Text(
+                        text = status.message,
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+            is ForgotPasswordState.Error -> {
+                Text(
+                        text = status.message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+            else -> {}
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Link para recuperar contraseña
-        TextButton(onClick = onNavigateToForgotPassword) { Text("¿Olvidaste tu contraseña?") }
-
-        // Link a Registro
-        TextButton(onClick = onNavigateToRegister, modifier = Modifier.padding(top = 12.dp)) {
-            Text("¿No tienes cuenta? Regístrate")
+        // Link para volver al login
+        TextButton(onClick = onNavigateToLogin, modifier = Modifier.padding(top = 12.dp)) {
+            Text("Volver al Inicio de Sesión")
         }
     }
 }
