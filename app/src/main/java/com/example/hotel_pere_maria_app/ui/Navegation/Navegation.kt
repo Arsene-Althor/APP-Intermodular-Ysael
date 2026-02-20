@@ -11,6 +11,8 @@ import com.example.hotel_pere_maria_app.ui.Views.Add
 import com.example.hotel_pere_maria_app.ui.Views.ForgotPassword
 import com.example.hotel_pere_maria_app.ui.Views.Home
 import com.example.hotel_pere_maria_app.ui.Views.Login
+import com.example.hotel_pere_maria_app.ui.Views.RoomList
+import com.example.hotel_pere_maria_app.ui.Views.RoomDetail
 import com.example.hotel_pere_maria_app.ui.Views.ModReserva
 import com.example.hotel_pere_maria_app.ui.Views.Profile
 import com.example.hotel_pere_maria_app.ui.Views.Register
@@ -80,6 +82,16 @@ fun NavigationScaffold(
         }
         composable(Routes.Add.route){
             Add(snackbarHostState)
+        }
+        composable(Routes.RoomList.route){
+            RoomList(navController = navigationController)
+        }
+        composable(Routes.RoomDetail.route){ backStackEntry ->
+            val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
+            RoomDetail(
+                navController = navigationController,
+                roomId = roomId
+            )
         }
         composable("${Routes.ModReserva.route}/{reservaId}"){
             backStackEntry ->

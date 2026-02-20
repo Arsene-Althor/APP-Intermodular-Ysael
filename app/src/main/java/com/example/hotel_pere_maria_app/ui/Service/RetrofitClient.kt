@@ -39,6 +39,8 @@ object RetrofitClient {
         retrofit.create(AuthService:: class.java)
     }
 
+    val roomService: RoomService by lazy {
+        retrofit.create(RoomService::class.java)
     val userService: UserService by lazy {
         retrofit.create(UserService::class.java)
     }

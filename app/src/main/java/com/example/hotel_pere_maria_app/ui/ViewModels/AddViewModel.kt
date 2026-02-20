@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.hotel_pere_maria_app.ui.Models.Reservation
 import com.example.hotel_pere_maria_app.ui.Models.ReservationRepository
+import com.example.hotel_pere_maria_app.ui.Models.Room
 import com.example.hotel_pere_maria_app.ui.Service.RetrofitClient
 import com.example.hotel_pere_maria_app.ui.Service.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,6 +51,16 @@ private val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                         check_out = fechaSelct
                         _uiState.update { it.copy(check_out  =fechaString) }
                     }
+                    
+                    // Verificar si ambas fechas están seleccionadas
+                    val canSelect = check_in != null && check_out != null
+                    _uiState.update { it.copy(canSelectRoom = canSelect) }
+                    
+                    // Si cambian las fechas, limpiar la habitación seleccionada
+                    if(_uiState.value.selectedRoom != null) {
+                        _uiState.update { it.copy(selectedRoom = null, room = "") }
+                    }
+                    
                     if(_uiState.value.room != "" && _uiState.value.room.isNotEmpty()){
                         actualizarPrecio()
                     }
@@ -135,6 +146,28 @@ private val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         _uiState.update { it.copy(mensajeRespuesta = null, errorRespusta = false) }
     }
 
+    /**
+     * Muestra u oculta el diálogo de selección de habitación
+     */
+    fun onShowRoomDialog(show: Boolean) {
+        _uiState.update { it.copy(showRoomDialog = show) }
+    }
+
+    /**
+     * Maneja la selección de una habitación desde el diálogo
+     */
+    fun onRoomSelected(room: Room) {
+        _uiState.update { 
+            it.copy(
+                selectedRoom = room,
+                room = room.room_id // Mantener el ID para compatibilidad con API
+            ) 
+        }
+        if (check_out != null && check_in != null) {
+            actualizarPrecio()
+        }
+    }
+
 
 }
 
@@ -143,6 +176,9 @@ data class AdduiState(
     val check_in: String = "",
     val check_out: String = "",
     val room: String = "",
+    val selectedRoom: Room? = null,
+    val showRoomDialog: Boolean = false,
+    val canSelectRoom: Boolean = false,
     val showResumen: Boolean = false,
     val mensajeRespuesta:String? = null,
     val errorRespusta: Boolean = false

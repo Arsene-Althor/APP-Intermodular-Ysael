@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +26,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import com.example.hotel_pere_maria_app.ui.ViewModels.AdduiState
+import com.example.hotel_pere_maria_app.ui.Components.RoomSelectionDialog
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,18 +100,126 @@ fun Add(snackbarHostState : SnackbarHostState) {
             )
 
             OutlinedTextField(
-                value = state.room,
-                onValueChange = {
-                    newText ->
-                    addViewModel.onRoomChanged(newText)
-                },
-                readOnly = false,
-                modifier = Modifier.fillMaxWidth(),
+                value = state.selectedRoom?.type ?: "Selecciona una habitación",
+                onValueChange = { },
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = state.canSelectRoom) { 
+                        if(state.canSelectRoom) {
+                            addViewModel.onShowRoomDialog(true) 
+                        }
+                    },
                 label = { Text("Habitación") },
-                leadingIcon = { Icon(painter = painterResource(id = R.drawable.outline_bedroom_parent_24), contentDescription = null) }
+                leadingIcon = { 
+                    Icon(
+                        painter = painterResource(id = R.drawable.outline_bedroom_parent_24), 
+                        contentDescription = null
+                    ) 
+                },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Seleccionar"
+                    )
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = if(state.canSelectRoom) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                enabled = false
             )
+            
+            // Mensaje de ayuda cuando no se pueden seleccionar habitaciones
+            if(!state.canSelectRoom) {
+                Text(
+                    text = "⚠️ Selecciona las fechas de check-in y check-out primero",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                )
+            }
 
+            // Vista previa de la habitación seleccionada
+            state.selectedRoom?.let { room ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp)
+                    ) {
+                        // Imagen
+                        AsyncImage(
+                            model = room.image,
+                            contentDescription = "Imagen de ${room.type}",
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
 
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        // Información
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = room.type,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = room.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Star,
+                                        contentDescription = null,
+                                        tint = Color(0xFFFFC107),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "${room.rate}",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Máx. ${room.max_occupancy}",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         Card(
@@ -153,6 +267,20 @@ fun Add(snackbarHostState : SnackbarHostState) {
                     addViewModel.onShowResumen(false)
                     addViewModel.realizarReserva()
                 }
+            )
+        }
+
+        // Diálogo de selección de habitación
+        if(state.showRoomDialog) {
+            RoomSelectionDialog(
+                onDismiss = { addViewModel.onShowRoomDialog(false) },
+                onRoomSelected = { room ->
+                    addViewModel.onRoomSelected(room)
+                },
+                selectedRoomId = state.room,
+                showOnlyAvailable = true,
+                checkInDate = state.check_in,
+                checkOutDate = state.check_out
             )
         }
     }
