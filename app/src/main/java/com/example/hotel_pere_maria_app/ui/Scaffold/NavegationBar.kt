@@ -55,6 +55,7 @@ fun NavigationBarState(navController : NavHostController) {
     val items = listOf<Navitems>(
         Navitems("ADD", Icons.Default.Add, Routes.Add.route),
         Navitems("Home", Icons.Default.Home, Routes.Home.route),
+        Navitems("Rooms", Icons.Default.Favorite, Routes.RoomList.route),
         Navitems("Profile", Icons.Default.AccountCircle, Routes.User.route)
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
