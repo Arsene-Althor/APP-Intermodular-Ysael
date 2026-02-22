@@ -41,6 +41,8 @@ fun RoomDetail(
         reviewViewModel: ReviewViewModel = viewModel()
 ) {
     val selectedRoom by viewModel.selectedRoom.collectAsState()
+    val isLoadingDetail by viewModel.isLoadingDetail.collectAsState()
+    val detailError by viewModel.detailError.collectAsState()
 
     // Cargar detalles de la habitación y reseñas cuando se abre la pantalla
     LaunchedEffect(roomId) {
@@ -48,103 +50,84 @@ fun RoomDetail(
         reviewViewModel.loadReviews(roomId)
     }
 
-    // Snackbar para mensajes de feedback
-    val snackbarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(submitMessage) {
-        submitMessage?.let {
-            snackbarHostState.showSnackbar(it)
-            reviewViewModel.clearMessage()
-        }
-    }
-
     Scaffold(
-            topBar = {
-                TopAppBar(
-                        title = { Text("Detalles de la Habitación") },
-                        navigationIcon = {
-                            IconButton(onClick = { navController.popBackStack() }) {
-                                Icon(
-                                        imageVector = Icons.Default.ArrowBack,
-                                        contentDescription = "Volver"
-                                )
-                            }
-                        },
-                        colors =
-                                TopAppBarDefaults.topAppBarColors(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        titleContentColor =
-                                                MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                )
-            },
-            snackbarHost = { SnackbarHost(snackbarHostState) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Detalles de la Habitación") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Volver"
+                        )
+                    }
+                },
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor =
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+            )
+        },
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            selectedRoom?.let { room ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    // Imagen principal
-                    AsyncImage(
-                        model = room.image,
-                        contentDescription = "Imagen de ${room.type}",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp),
-                        contentScale = ContentScale.Crop
+            when {
+                isLoadingDetail -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
                     )
+                }
 
-                    // Contenido de detalles
+                detailError != null -> {
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
+                            .align(Alignment.Center)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Tipo y estado
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = room.type,
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            Surface(
-                                color = if (room.isAvailable)
-                                    Color(0xFF4CAF50)
-                                else
-                                    Color(0xFFF44336),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    text = if (room.isAvailable) "Disponible" else "Ocupada",
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                        // ID de la habitación
                         Text(
-                            text = "ID: ${room.room_id}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = detailError ?: "Error desconocido",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error
                         )
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                viewModel.loadRoomDetails(roomId)
+                            }
+                        ) {
+                            Text("Reintentar")
+                        }
+                    }
+                }
+
+                selectedRoom != null -> {
+                    val room = selectedRoom!!
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+
+                        // Imagen principal
+                        AsyncImage(
+                            model = room.image,
+                            contentDescription = "Imagen de ${room.type}",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
 
                         // Precio destacado
                         Card(
@@ -173,7 +156,7 @@ fun RoomDetail(
                             }
                         }
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
                         // Información adicional
                         InfoSection(title = "Información General") {
@@ -183,9 +166,9 @@ fun RoomDetail(
                                 value = "${room.rate}/5.0",
                                 iconTint = Color(0xFFFFC107)
                             )
-                            
+
                             Spacer(modifier = Modifier.height(12.dp))
-                            
+
                             InfoRow(
                                 icon = Icons.Default.Person,
                                 label = "Ocupación máxima",
@@ -193,7 +176,7 @@ fun RoomDetail(
                             )
                         }
 
-                            Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
                         // Descripción
                         InfoSection(title = "Descripción") {
@@ -206,42 +189,74 @@ fun RoomDetail(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // Botón de reservar (opcional)
-                        if (room.isAvailable) {
-                            Button(
-                                onClick = { /* TODO: Implementar reserva */ },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(
-                                    text = "Reservar Habitación",
-                                    style = MaterialTheme.typography.titleMedium
+                        // ── SECCIÓN DE RESEÑAS ────────────────────────────────
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Text(
+                            text = "Danos tu opinión",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Formulario para dejar reseña (Lo ponemos primero para que sea lo que el usuario ve "abajo de los detalles")
+                        val canReview by reviewViewModel.canReview.collectAsState()
+                        val userReview by reviewViewModel.userReview.collectAsState()
+
+                        if (canReview && userReview == null) {
+                            ReviewForm(roomId, reviewViewModel)
+                            Spacer(modifier = Modifier.height(24.dp))
+                        } else if (userReview != null) {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(
+                                        alpha = 0.3f
+                                    )
                                 )
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                                    Text(
+                                        text = "Ya has dejado una reseña para esta habitación.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
                             }
+                            Spacer(modifier = Modifier.height(24.dp))
+                        }
+
+                        // Lista de reseñas existentes
+                        Text(
+                            text = "Otras reseñas",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        val reviews by reviewViewModel.reviews.collectAsState()
+                        val isLoadingReviews by reviewViewModel.isLoading.collectAsState()
+
+                        if (isLoadingReviews) {
+                            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                        } else if (reviews.isEmpty()) {
+                            Text(
+                                text = "Aún no hay reseñas para esta habitación.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
                         } else {
-                            OutlinedButton(
-                                onClick = { /* No disponible */ },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                enabled = false,
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(
-                                    text = "Habitación no disponible",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
+                            reviews.forEach { review ->
+                                ReviewItem(review)
+                                Spacer(modifier = Modifier.height(12.dp))
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(40.dp))
                     }
                 }
-            } ?: run {
-                // Mostrar loading mientras se carga
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
             }
         }
     }
@@ -253,10 +268,10 @@ fun StarRatingDisplay(rating: Int) {
     Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
         for (i in 1..5) {
             Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = null,
-                    tint = if (i <= rating) Color(0xFFFFC107) else Color(0xFFBDBDBD),
-                    modifier = Modifier.size(16.dp)
+                imageVector = Icons.Default.Star,
+                contentDescription = null,
+                tint = if (i <= rating) Color(0xFFFFC107) else Color(0xFFBDBDBD),
+                modifier = Modifier.size(16.dp)
             )
         }
     }
@@ -277,17 +292,16 @@ fun formatReviewDate(isoDate: String): String {
 fun InfoSection(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column {
         Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(12.dp))
         Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors =
-                        CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         ) { Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) { content() } }
     }
 }
@@ -295,26 +309,149 @@ fun InfoSection(title: String, content: @Composable ColumnScope.() -> Unit) {
 /** Fila de información con icono */
 @Composable
 fun InfoRow(
-        icon: androidx.compose.ui.graphics.vector.ImageVector,
-        label: String,
-        value: String,
-        iconTint: Color = MaterialTheme.colorScheme.primary
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+    iconTint: Color = MaterialTheme.colorScheme.primary
 ) {
     Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                    imageVector = icon,
-                    contentDescription = label,
-                    tint = iconTint,
-                    modifier = Modifier.size(24.dp)
+                imageVector = icon,
+                contentDescription = label,
+                tint = iconTint,
+                modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(text = label, style = MaterialTheme.typography.bodyLarge)
         }
-        Text(text = value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun ReviewItem(review: Review) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = review.user_name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                StarRatingDisplay(review.rating)
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = review.comment,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            if (review.createdAt != null) {
+                Text(
+                    text = formatReviewDate(review.createdAt),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.End)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ReviewForm(roomId: String, viewModel: ReviewViewModel) {
+    val rating by viewModel.selectedRating.collectAsState()
+    val comment by viewModel.commentText.collectAsState()
+    val isSubmitting by viewModel.isSubmitting.collectAsState()
+    val message by viewModel.submitMessage.collectAsState()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(
+                alpha = 0.2f
+            )
+        ),
+        border = CardDefaults.outlinedCardBorder()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Deja tu reseña",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Selector de estrellas interactivo
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                for (i in 1..5) {
+                    IconButton(
+                        onClick = { viewModel.setRating(i) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "$i estrellas",
+                            tint = if (i <= rating) Color(0xFFFFC107) else Color(0xFFBDBDBD)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = comment,
+                onValueChange = { viewModel.setComment(it) },
+                label = { Text("Tu opinión") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { viewModel.submitReview(roomId) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isSubmitting
+            ) {
+                if (isSubmitting) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Text("Publicar Reseña")
+                }
+            }
+
+            message?.let {
+                Text(
+                    text = it,
+                    color = if (it.contains("Error")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+        }
     }
 }

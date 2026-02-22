@@ -20,7 +20,7 @@ interface RoomService {
      * @return Response con los datos de la habitación
      */
     @GET("room/one")
-    suspend fun getRoomById(@Path("id") roomId: String): Response<Room>
+    suspend fun getRoomById(@Query("id") roomId: String): Response<Room>
     
     /**
      * Obtiene habitaciones disponibles en un rango de fechas

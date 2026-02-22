@@ -5,6 +5,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.HTTP
+import retrofit2.http.POST
 import retrofit2.http.Path
 
 /**
@@ -25,7 +26,7 @@ interface ReviewService {
      * @param body Map con room_id, rating, comment
      * @return Response con mensaje de confirmación
      */
-    @retrofit2.http.POST("review/create")
+    @POST("review/create")
     suspend fun createReview(@Body body: Map<String, String>): Response<Map<String, String>>
 
     /**
