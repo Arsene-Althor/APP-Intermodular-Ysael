@@ -11,11 +11,12 @@ import com.example.hotel_pere_maria_app.ui.Views.Add
 import com.example.hotel_pere_maria_app.ui.Views.ForgotPassword
 import com.example.hotel_pere_maria_app.ui.Views.Home
 import com.example.hotel_pere_maria_app.ui.Views.Login
-import com.example.hotel_pere_maria_app.ui.Views.RoomList
-import com.example.hotel_pere_maria_app.ui.Views.RoomDetail
 import com.example.hotel_pere_maria_app.ui.Views.ModReserva
 import com.example.hotel_pere_maria_app.ui.Views.Profile
 import com.example.hotel_pere_maria_app.ui.Views.Register
+import com.example.hotel_pere_maria_app.ui.Views.ReviewsScreen
+import com.example.hotel_pere_maria_app.ui.Views.RoomDetail
+import com.example.hotel_pere_maria_app.ui.Views.RoomList
 
 @Composable
 fun NavigationLogin(navigationController: NavHostController) {
@@ -71,32 +72,30 @@ fun NavigationScaffold(
         onLogout: () -> Unit
 ) {
     NavHost(
-        navController = navigationController,
-        startDestination = Routes.Home.route,
-        modifier = modifier
-    ){
-        composable(Routes.Home.route){
-            Home(onNavigate = {ruta ->
-                navigationController.navigate(ruta)
-            }, snackbarHostState = snackbarHostState)
-        }
-        composable(Routes.Add.route){
-            Add(snackbarHostState)
-        }
-        composable(Routes.RoomList.route){
-            RoomList(navController = navigationController)
-        }
-        composable(Routes.RoomDetail.route){ backStackEntry ->
-            val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
-            RoomDetail(
-                navController = navigationController,
-                roomId = roomId
+            navController = navigationController,
+            startDestination = Routes.Home.route,
+            modifier = modifier
+    ) {
+        composable(Routes.Home.route) {
+            Home(
+                    onNavigate = { ruta -> navigationController.navigate(ruta) },
+                    snackbarHostState = snackbarHostState
             )
         }
-        composable("${Routes.ModReserva.route}/{reservaId}"){
-            backStackEntry ->
-            val reservaId = backStackEntry.arguments?.getString("reservaId")?: ""
-            ModReserva(snackbarHostState, reservaId, onBack = {navigationController.popBackStack()})
+        composable(Routes.Add.route) { Add(snackbarHostState) }
+        composable(Routes.RoomList.route) { RoomList(navController = navigationController) }
+        composable(Routes.Reviews.route) { ReviewsScreen() }
+        composable(Routes.RoomDetail.route) { backStackEntry ->
+            val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
+            RoomDetail(navController = navigationController, roomId = roomId)
+        }
+        composable("${Routes.ModReserva.route}/{reservaId}") { backStackEntry ->
+            val reservaId = backStackEntry.arguments?.getString("reservaId") ?: ""
+            ModReserva(
+                    snackbarHostState,
+                    reservaId,
+                    onBack = { navigationController.popBackStack() }
+            )
         }
         composable(Routes.User.route) { Profile(onLogout = onLogout) }
     }

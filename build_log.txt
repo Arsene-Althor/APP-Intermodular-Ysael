@@ -1,0 +1,371 @@
+Initialized native services in: C:\Users\Almon\.gradle\native
+Initialized jansi services in: C:\Users\Almon\.gradle\native
+The client will now receive all logging from the daemon (pid: 37120). The daemon log file: C:\Users\Almon\.gradle\daemon\8.13\daemon-37120.out.log
+Starting 3rd build in daemon [uptime: 3 mins 4.67 secs, performance: 97%, GC rate: 1.14/s, heap usage: 3% of 2 GiB]
+Using 12 worker leases.
+Now considering [C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Settings evaluated using settings file 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\settings.gradle.kts'.
+Projects loaded. Root project using build file 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\build.gradle.kts'.
+Included projects: [root project 'Prueba', project ':app']
+
+> Configure project :
+Evaluating root project 'Prueba' using build file 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\build.gradle.kts'.
+Resolved plugin [id: 'com.android.application', version: '8.13.2', apply: false]
+Resolved plugin [id: 'org.jetbrains.kotlin.android', version: '2.2.21', apply: false]
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.2.21', apply: false]
+
+> Configure project :app
+Evaluating project ':app' using build file 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\build.gradle.kts'.
+Resolved plugin [id: 'com.android.application', version: '8.13.2']
+Resolved plugin [id: 'org.jetbrains.kotlin.android', version: '2.2.21']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.2.21']
+Using default execution profile
+Build 3e1a21df-6463-43ce-8a41-a4f2911b73f0 is started
+Using Kotlin Gradle Plugin gradle813 variant
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+All projects evaluated.
+Task path ':app:assembleDebug' matched project ':app'
+Task name matched 'assembleDebug'
+Selected primary task 'assembleDebug' from project :app
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :app:compileDebugKotlin
+Tasks to be executed: [task ':app:preBuild', task ':app:preDebugBuild', task ':app:mergeDebugNativeDebugMetadata', task ':app:checkKotlinGradlePluginConfigurationErrors', task ':app:checkDebugAarMetadata', task ':app:processDebugNavigationResources', task ':app:compileDebugNavigationResources', task ':app:generateDebugResValues', task ':app:mapDebugSourceSetPaths', task ':app:generateDebugResources', task ':app:mergeDebugResources', task ':app:packageDebugResources', task ':app:parseDebugLocalResources', task ':app:createDebugCompatibleScreenManifests', task ':app:extractDeepLinksDebug', task ':app:processDebugMainManifest', task ':app:processDebugManifest', task ':app:processDebugManifestForPackage', task ':app:processDebugResources', task ':app:compileDebugKotlin', task ':app:javaPreCompileDebug', task ':app:compileDebugJavaWithJavac', task ':app:mergeDebugShaders', task ':app:compileDebugShaders', task ':app:generateDebugAssets', task ':app:mergeDebugAssets', task ':app:compressDebugAssets', task ':app:processDebugJavaRes', task ':app:mergeDebugJavaResource', task ':app:checkDebugDuplicateClasses', task ':app:desugarDebugFileDependencies', task ':app:mergeExtDexDebug', task ':app:mergeLibDexDebug', task ':app:dexBuilderDebug', task ':app:mergeProjectDexDebug', task ':app:mergeDebugJniLibFolders', task ':app:mergeDebugNativeLibs', task ':app:stripDebugDebugSymbols', task ':app:validateSigningDebug', task ':app:writeDebugAppMetadata', task ':app:writeDebugSigningConfigVersions', task ':app:packageDebug', task ':app:createDebugApkListingFileRedirect', task ':app:assembleDebug']
+Tasks that were excluded: []
+Resolve mutations for :app:preBuild (Thread[#324,Execution worker,5,main]) started.
+:app:preBuild (Thread[#324,Execution worker,5,main]) started.
+
+> Task :app:preBuild UP-TO-DATE
+Skipping task ':app:preBuild' as it has no actions.
+Resolve mutations for :app:preDebugBuild (Thread[#324,Execution worker,5,main]) started.
+:app:preDebugBuild (Thread[#325,Execution worker Thread 2,5,main]) started.
+
+> Task :app:preDebugBuild UP-TO-DATE
+Skipping task ':app:preDebugBuild' as it has no actions.
+Resolve mutations for :app:mergeDebugNativeDebugMetadata (Thread[#325,Execution worker Thread 2,5,main]) started.
+:app:mergeDebugNativeDebugMetadata (Thread[#325,Execution worker Thread 2,5,main]) started.
+
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+Skipping task ':app:mergeDebugNativeDebugMetadata' as it has no source files and no previous output files.
+Resolve mutations for :app:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 2,5,main]) started.
+:app:checkKotlinGradlePluginConfigurationErrors (Thread[#325,Execution worker Thread 2,5,main]) started.
+
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':app:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :app:checkDebugAarMetadata (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:checkDebugAarMetadata (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+Caching disabled for task ':app:checkDebugAarMetadata' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':app:checkDebugAarMetadata' as it is up-to-date.
+Resolve mutations for :app:processDebugNavigationResources (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:processDebugNavigationResources (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:processDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':app:processDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':app:processDebugNavigationResources' as it is up-to-date.
+Resolve mutations for :app:compileDebugNavigationResources (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:compileDebugNavigationResources (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+Caching disabled for task ':app:compileDebugNavigationResources' because:
+  Build cache is disabled
+Skipping task ':app:compileDebugNavigationResources' as it is up-to-date.
+Resolve mutations for :app:generateDebugResValues (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:generateDebugResValues (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:generateDebugResValues UP-TO-DATE
+Caching disabled for task ':app:generateDebugResValues' because:
+  Build cache is disabled
+Skipping task ':app:generateDebugResValues' as it is up-to-date.
+Resolve mutations for :app:mapDebugSourceSetPaths (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:mapDebugSourceSetPaths (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+Caching disabled for task ':app:mapDebugSourceSetPaths' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':app:mapDebugSourceSetPaths' as it is up-to-date.
+Resolve mutations for :app:generateDebugResources (Thread[#323,included builds,5,main]) started.
+:app:generateDebugResources (Thread[#323,included builds,5,main]) started.
+
+> Task :app:generateDebugResources UP-TO-DATE
+Caching disabled for task ':app:generateDebugResources' because:
+  Build cache is disabled
+Skipping task ':app:generateDebugResources' as it is up-to-date.
+Resolve mutations for :app:mergeDebugResources (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:mergeDebugResources (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:mergeDebugResources UP-TO-DATE
+Caching disabled for task ':app:mergeDebugResources' because:
+  Build cache is disabled
+Skipping task ':app:mergeDebugResources' as it is up-to-date.
+Resolve mutations for :app:packageDebugResources (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:packageDebugResources (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:packageDebugResources UP-TO-DATE
+Caching disabled for task ':app:packageDebugResources' because:
+  Build cache is disabled
+Skipping task ':app:packageDebugResources' as it is up-to-date.
+Resolve mutations for :app:parseDebugLocalResources (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:parseDebugLocalResources (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:parseDebugLocalResources UP-TO-DATE
+Caching disabled for task ':app:parseDebugLocalResources' because:
+  Build cache is disabled
+Skipping task ':app:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :app:createDebugCompatibleScreenManifests (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:createDebugCompatibleScreenManifests (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+Caching disabled for task ':app:createDebugCompatibleScreenManifests' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':app:createDebugCompatibleScreenManifests' as it is up-to-date.
+Resolve mutations for :app:extractDeepLinksDebug (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:extractDeepLinksDebug (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+Caching disabled for task ':app:extractDeepLinksDebug' because:
+  Build cache is disabled
+Skipping task ':app:extractDeepLinksDebug' as it is up-to-date.
+Resolve mutations for :app:processDebugMainManifest (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:processDebugMainManifest (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:processDebugMainManifest UP-TO-DATE
+Caching disabled for task ':app:processDebugMainManifest' because:
+  Build cache is disabled
+Skipping task ':app:processDebugMainManifest' as it is up-to-date.
+Resolve mutations for :app:processDebugManifest (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:processDebugManifest (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:processDebugManifest UP-TO-DATE
+Caching disabled for task ':app:processDebugManifest' because:
+  Build cache is disabled
+Skipping task ':app:processDebugManifest' as it is up-to-date.
+Resolve mutations for :app:processDebugManifestForPackage (Thread[#326,Execution worker Thread 3,5,main]) started.
+:app:processDebugManifestForPackage (Thread[#326,Execution worker Thread 3,5,main]) started.
+
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+Custom actions are attached to task ':app:processDebugManifestForPackage'.
+Caching disabled for task ':app:processDebugManifestForPackage' because:
+  Build cache is disabled
+Skipping task ':app:processDebugManifestForPackage' as it is up-to-date.
+Resolve mutations for :app:processDebugResources (Thread[#323,included builds,5,main]) started.
+:app:processDebugResources (Thread[#323,included builds,5,main]) started.
+
+> Task :app:processDebugResources UP-TO-DATE
+Caching disabled for task ':app:processDebugResources' because:
+  Build cache is disabled
+Skipping task ':app:processDebugResources' as it is up-to-date.
+Resolve mutations for :app:compileDebugKotlin (Thread[#323,included builds,5,main]) started.
+:app:compileDebugKotlin (Thread[#323,included builds,5,main]) started.
+Resolve mutations for :app:javaPreCompileDebug (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:javaPreCompileDebug (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:javaPreCompileDebug UP-TO-DATE
+Caching disabled for task ':app:javaPreCompileDebug' because:
+  Build cache is disabled
+Skipping task ':app:javaPreCompileDebug' as it is up-to-date.
+Resolve mutations for :app:mergeDebugShaders (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:mergeDebugShaders (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:mergeDebugShaders UP-TO-DATE
+Caching disabled for task ':app:mergeDebugShaders' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':app:mergeDebugShaders' as it is up-to-date.
+Resolve mutations for :app:compileDebugShaders (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:compileDebugShaders (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:compileDebugShaders NO-SOURCE
+Skipping task ':app:compileDebugShaders' as it has no source files and no previous output files.
+Resolve mutations for :app:generateDebugAssets (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:generateDebugAssets (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:generateDebugAssets UP-TO-DATE
+Skipping task ':app:generateDebugAssets' as it has no actions.
+Resolve mutations for :app:mergeDebugAssets (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:mergeDebugAssets (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:mergeDebugAssets UP-TO-DATE
+Caching disabled for task ':app:mergeDebugAssets' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':app:mergeDebugAssets' as it is up-to-date.
+Resolve mutations for :app:compressDebugAssets (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:compressDebugAssets (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:compressDebugAssets UP-TO-DATE
+Caching disabled for task ':app:compressDebugAssets' because:
+  Build cache is disabled
+Skipping task ':app:compressDebugAssets' as it is up-to-date.
+Resolve mutations for :app:checkDebugDuplicateClasses (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:checkDebugDuplicateClasses (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+Caching disabled for task ':app:checkDebugDuplicateClasses' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':app:checkDebugDuplicateClasses' as it is up-to-date.
+Resolve mutations for :app:desugarDebugFileDependencies (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:desugarDebugFileDependencies (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+Caching disabled for task ':app:desugarDebugFileDependencies' because:
+  Build cache is disabled
+Skipping task ':app:desugarDebugFileDependencies' as it is up-to-date.
+Resolve mutations for :app:mergeExtDexDebug (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:mergeExtDexDebug (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:mergeExtDexDebug UP-TO-DATE
+Caching disabled for task ':app:mergeExtDexDebug' because:
+  Build cache is disabled
+Skipping task ':app:mergeExtDexDebug' as it is up-to-date.
+Resolve mutations for :app:mergeLibDexDebug (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:mergeLibDexDebug (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:mergeLibDexDebug UP-TO-DATE
+Caching disabled for task ':app:mergeLibDexDebug' because:
+  Build cache is disabled
+Skipping task ':app:mergeLibDexDebug' as it is up-to-date.
+Resolve mutations for :app:mergeDebugJniLibFolders (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:mergeDebugJniLibFolders (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+Caching disabled for task ':app:mergeDebugJniLibFolders' because:
+  Build cache is disabled
+  Simple merging task
+Skipping task ':app:mergeDebugJniLibFolders' as it is up-to-date.
+Resolve mutations for :app:mergeDebugNativeLibs (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:mergeDebugNativeLibs (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+Caching disabled for task ':app:mergeDebugNativeLibs' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':app:mergeDebugNativeLibs' as it is up-to-date.
+Resolve mutations for :app:stripDebugDebugSymbols (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:stripDebugDebugSymbols (Thread[#329,Execution worker Thread 6,5,main]) started.
+
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+Caching disabled for task ':app:stripDebugDebugSymbols' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':app:stripDebugDebugSymbols' as it is up-to-date.
+Resolve mutations for :app:validateSigningDebug (Thread[#329,Execution worker Thread 6,5,main]) started.
+:app:validateSigningDebug (Thread[#327,Execution worker Thread 4,5,main]) started.
+
+> Task :app:validateSigningDebug UP-TO-DATE
+Caching disabled for task ':app:validateSigningDebug' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':app:validateSigningDebug' as it is up-to-date.
+Resolve mutations for :app:writeDebugAppMetadata (Thread[#327,Execution worker Thread 4,5,main]) started.
+:app:writeDebugAppMetadata (Thread[#327,Execution worker Thread 4,5,main]) started.
+
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+Caching disabled for task ':app:writeDebugAppMetadata' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':app:writeDebugAppMetadata' as it is up-to-date.
+Resolve mutations for :app:writeDebugSigningConfigVersions (Thread[#327,Execution worker Thread 4,5,main]) started.
+:app:writeDebugSigningConfigVersions (Thread[#327,Execution worker Thread 4,5,main]) started.
+
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+Caching disabled for task ':app:writeDebugSigningConfigVersions' because:
+  Build cache is disabled
+  Caching has been disabled for the task
+Skipping task ':app:writeDebugSigningConfigVersions' as it is up-to-date.
+
+> Task :app:compileDebugKotlin
+Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task :app:compileDebugAndroidTestKotlin
+Caching disabled for task ':app:compileDebugKotlin' because:
+  Build cache is disabled
+Task ':app:compileDebugKotlin' is not up-to-date because:
+  Task has failed previously.
+The input changes require a full rebuild for incremental task ':app:compileDebugKotlin'.
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\kotlin', not found
+file or directory 'C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\debug\java', not found
+Kotlin source files: C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Components\RoomSelectionDialog.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\MainActivity.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Models\LoginRequest.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Models\LoginResponse.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Models\RegisterRequest.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Models\RegisterResponse.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Models\Reservation.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Models\Review.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Models\Room.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Models\User.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Navegation\Navegation.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Navegation\NavegationMain.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Navegation\Navitems.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Navegation\Routes.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Scaffold\NavegationBar.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Scaffold\ScaffoldMain.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Scaffold\TopAppBar.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Service\AuthService.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Service\ReservationService.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Service\RetrofitClient.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Service\ReviewService.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Service\RoomService.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Service\SessionManager.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Service\ThemeManager.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Service\UserService.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\theme\Color.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\theme\Theme.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\theme\Type.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\ViewModels\AddViewModel.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\ViewModels\ForgotPasswordViewModel.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\ViewModels\HomeViewModel.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\ViewModels\LoginViewModel.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\ViewModels\ModReservaViewModel.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\ViewModels\ProfileViewModel.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\ViewModels\RegisterViewModel.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\ViewModels\ReviewViewModel.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\ViewModels\RoomViewModel.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Views\Add.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Views\Components.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Views\ForgotPassword.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Views\Home.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Views\Login.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Views\ModReserva.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Views\Profile.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Views\Register.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Views\Reviews.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Views\RoomDetail.kt, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\src\main\java\com\example\hotel_pere_maria_app\ui\Views\RoomList.kt
+Java source files: 
+Script source files: 
+Script file extensions: 
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: null
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), sourceChanges=org.jetbrains.kotlin.buildtools.api.SourcesChanges$Unknown@51c5355d, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\build\kotlin\compileDebugKotlin\cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\build\kotlin\compileDebugKotlin\local-state\build-history.bin, useModuleDetection=true), icFeatures=IncrementalCompilationFeatures(usePreciseJavaTracking=true, withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false, enableMonotonousIncrementalCompileSetExpansion=true), outputFiles=[C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\build\tmp\kotlin-classes\debug, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\build\kotlin\compileDebugKotlin\cacheable, C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular\app\build\kotlin\compileDebugKotlin\local-state])
+e: file:///C:/Users/Almon/OneDrive/Documentos/Proyecto%20Intermodular/APP-Intermodular/app/src/main/java/com/example/hotel_pere_maria_app/ui/Navegation/Navegation.kt:86:44 Unresolved reference 'ReviewsScreen'.
+Finished executing kotlin compiler using DAEMON strategy
+
+> Task :app:compileDebugKotlin FAILED
+Build 3e1a21df-6463-43ce-8a41-a4f2911b73f0 is closed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 5s
+30 actionable tasks: 1 executed, 29 up-to-date
+Watched directory hierarchies: [C:\Users\Almon\OneDrive\Documentos\Proyecto Intermodular\APP-Intermodular]

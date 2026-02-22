@@ -26,7 +26,7 @@ import com.example.hotel_pere_maria_app.ui.Navegation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopAppBarView(onInfoClick: () -> Unit, onSettingsClick: () -> Unit){
+fun TopAppBarView(){
     TopAppBar(
         title = { Text("HOTEL PERE MARIA", style = MaterialTheme.typography.titleMedium) },
         navigationIcon = {
@@ -36,10 +36,6 @@ fun TopAppBarView(onInfoClick: () -> Unit, onSettingsClick: () -> Unit){
                 modifier = Modifier.size(90.dp),
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary)
             )
-        },
-        actions = {
-            IconButton(onClick = onInfoClick){ Icon(imageVector = Icons.Default.Info, contentDescription=null) }
-            IconButton(onClick = onSettingsClick){ Icon(imageVector = Icons.Default.Settings, contentDescription=null) }
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.primary,
@@ -59,9 +55,5 @@ fun TopAppBarState(navController: NavHostController){
             restoreState = true
         }
     }
-    fun onInfoClick(){ navigateWithState(Routes.Home.route) }
-    fun onSettingsClick(){ navigateWithState(Routes.Home.route) }
-    TopAppBarView(
-        onInfoClick = { onInfoClick() },
-        onSettingsClick = { onSettingsClick() })
+    TopAppBarView()
 }

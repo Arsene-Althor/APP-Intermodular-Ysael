@@ -5,7 +5,6 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     private const val BASE_URL = "http://51.255.198.93:3000/"
@@ -13,9 +12,7 @@ object RetrofitClient {
     private val authInterceptor = Interceptor { chain ->
         val request = chain.request().newBuilder()
 
-        SessionManager.userToken?.let {
-            request.addHeader("Authorization", "Bearer ${it}")
-        }
+        SessionManager.userToken?.let { request.addHeader("Authorization", "Bearer ${it}") }
         chain.proceed(request.build())
     }
     private val okHttpClient = OkHttpClient.Builder()
@@ -23,26 +20,24 @@ object RetrofitClient {
             level = HttpLoggingInterceptor.Level.BODY
         })
         .build()
-    private val retrofit: Retrofit by lazy {
+    private val retrofit : Retrofit by lazy {
         Retrofit.Builder().baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    //Creación de servicios
+    // Creación de servicios
     val reservationService: ReservationService by lazy {
         retrofit.create(ReservationService::class.java)
     }
 
     val authService: AuthService by lazy {
-        retrofit.create(AuthService::class.java)
+        retrofit.create(AuthService:: class.java)
     }
 
     val roomService: RoomService by lazy {
         retrofit.create(RoomService::class.java)
-    }
-
     val userService: UserService by lazy {
         retrofit.create(UserService::class.java)
     }
