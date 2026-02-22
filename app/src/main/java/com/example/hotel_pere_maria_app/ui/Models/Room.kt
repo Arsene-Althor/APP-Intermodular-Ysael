@@ -89,12 +89,30 @@ object RoomRepository {
         }
     }
 
-    /** Obtiene una habitación por ID. */
+    /** Obtiene una habitación por ID. Busca primero en la caché local. */
     suspend fun getRoomById(roomId: String): Room? {
+        // 1. Buscar en la lista ya cargada (evita llamada de red innecesaria)
+        val cached = _rooms.value.find { it.room_id == roomId }
+        if (cached != null) {
+            Log.d("ROOM_REPO", "getRoomById: encontrada en caché → $roomId")
+            return cached
+        }
+        // 2. Si no está en caché, intentar cargar todas y buscar de nuevo
+        Log.d("ROOM_REPO", "getRoomById: no está en caché, recargando lista…")
         return try {
-            val response = RetrofitClient.roomService.getRoomById(roomId)
-            if (response.isSuccessful) response.body() else null
-        } catch (e: Exception) { null }
+            val response = RetrofitClient.roomService.getAllRooms()
+            if (response.isSuccessful) {
+                val list = response.body() ?: emptyList()
+                _rooms.update { list }
+                list.find { it.room_id == roomId }
+            } else {
+                Log.e("ROOM_REPO", "getRoomById fallback error ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("ROOM_REPO", "getRoomById fallback exception: ${e.message}")
+            null
+        }
     }
 
     /**

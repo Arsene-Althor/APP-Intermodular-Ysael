@@ -48,17 +48,7 @@ fun RoomList(
         viewModel.loadRooms()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Habitaciones Disponibles") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        }
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

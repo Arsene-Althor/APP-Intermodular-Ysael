@@ -34,6 +34,8 @@ fun RoomDetail(
     viewModel: RoomViewModel = viewModel()
 ) {
     val selectedRoom by viewModel.selectedRoom.collectAsState()
+    val isLoadingDetail by viewModel.isLoadingDetail.collectAsState()
+    val detailError by viewModel.detailError.collectAsState()
 
     // Cargar detalles de la habitación cuando se abre la pantalla
     LaunchedEffect(roomId) {
@@ -64,164 +66,154 @@ fun RoomDetail(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            selectedRoom?.let { room ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    // Imagen principal
-                    AsyncImage(
-                        model = room.image,
-                        contentDescription = "Imagen de ${room.type}",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp),
-                        contentScale = ContentScale.Crop
+            when {
+                isLoadingDetail -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
                     )
-
-                    // Contenido de detalles
+                }
+                detailError != null -> {
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
+                            .align(Alignment.Center)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Tipo y estado
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = room.type,
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            Surface(
-                                color = if (room.isAvailable)
-                                    Color(0xFF4CAF50)
-                                else
-                                    Color(0xFFF44336),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    text = if (room.isAvailable) "Disponible" else "Ocupada",
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // ID de la habitación
                         Text(
-                            text = "ID: ${room.room_id}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = detailError ?: "Error desconocido",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = { viewModel.loadRoomDetails(roomId) }) {
+                            Text("Reintentar")
+                        }
+                    }
+                }
+                selectedRoom != null -> {
+                    val room = selectedRoom!!
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        // Imagen principal
+                        AsyncImage(
+                            model = room.image,
+                            contentDescription = "Imagen de ${room.type}",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp),
+                            contentScale = ContentScale.Crop
                         )
 
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // Precio destacado
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                        // Contenido de detalles
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp)
                         ) {
+                            // Tipo y estado
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Precio por noche:",
-                                    style = MaterialTheme.typography.titleMedium
+                                    text = room.type,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    fontWeight = FontWeight.Bold
                                 )
-                                Text(
-                                    text = "€${room.price_per_night}",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+
+                                Surface(
+                                    color = if (room.isAvailable)
+                                        Color(0xFF4CAF50)
+                                    else
+                                        Color(0xFFF44336),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = if (room.isAvailable) "Disponible" else "Ocupada",
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
-                        }
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                        // Información adicional
-                        InfoSection(title = "Información General") {
-                            InfoRow(
-                                icon = Icons.Default.Star,
-                                label = "Valoración",
-                                value = "${room.rate}/5.0",
-                                iconTint = Color(0xFFFFC107)
-                            )
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
-                            InfoRow(
-                                icon = Icons.Default.Person,
-                                label = "Ocupación máxima",
-                                value = "${room.max_occupancy} personas"
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // Descripción
-                        InfoSection(title = "Descripción") {
+                            // ID de la habitación
                             Text(
-                                text = room.description,
-                                style = MaterialTheme.typography.bodyLarge,
-                                lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
+                                text = "ID: ${room.room_id}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        }
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                            Spacer(modifier = Modifier.height(24.dp))
 
-                        // Botón de reservar (opcional)
-                        if (room.isAvailable) {
-                            Button(
-                                onClick = { /* TODO: Implementar reserva */ },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                shape = RoundedCornerShape(12.dp)
+                            // Precio destacado
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                )
                             ) {
-                                Text(
-                                    text = "Reservar Habitación",
-                                    style = MaterialTheme.typography.titleMedium
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Precio por noche:",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    Text(
+                                        text = "€${room.price_per_night}",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Información adicional
+                            InfoSection(title = "Información General") {
+                                InfoRow(
+                                    icon = Icons.Default.Star,
+                                    label = "Valoración",
+                                    value = "${room.rate}/5.0",
+                                    iconTint = Color(0xFFFFC107)
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                InfoRow(
+                                    icon = Icons.Default.Person,
+                                    label = "Ocupación máxima",
+                                    value = "${room.max_occupancy} personas"
                                 )
                             }
-                        } else {
-                            OutlinedButton(
-                                onClick = { /* No disponible */ },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                enabled = false,
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Descripción
+                            InfoSection(title = "Descripción") {
                                 Text(
-                                    text = "Habitación no disponible",
-                                    style = MaterialTheme.typography.titleMedium
+                                    text = room.description,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
                                 )
                             }
+
                         }
                     }
                 }
-            } ?: run {
-                // Mostrar loading mientras se carga
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
             }
         }
     }

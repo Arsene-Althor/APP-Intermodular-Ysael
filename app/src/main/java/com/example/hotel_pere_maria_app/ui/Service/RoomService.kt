@@ -3,7 +3,6 @@ package com.example.hotel_pere_maria_app.ui.Service
 import com.example.hotel_pere_maria_app.ui.Models.Room
 import retrofit2.Response
 import retrofit2.http.GET
-import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
@@ -24,7 +23,7 @@ interface RoomService {
      * @return Response con los datos de la habitación
      */
     @GET("room/one")
-    suspend fun getRoomById(@Path("id") roomId: String): Response<Room>
+    suspend fun getRoomById(@Query("id") roomId: String): Response<Room>
     
     /**
      * Obtiene habitaciones disponibles en un rango de fechas

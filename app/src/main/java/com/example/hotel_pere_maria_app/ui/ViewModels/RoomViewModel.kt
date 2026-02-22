@@ -40,6 +40,13 @@ class RoomViewModel : ViewModel() {
     private val _selectedRoom = MutableStateFlow<Room?>(null)
     val selectedRoom: StateFlow<Room?> = _selectedRoom
 
+    // Estado de carga y error exclusivos del detalle
+    private val _isLoadingDetail = MutableStateFlow(false)
+    val isLoadingDetail: StateFlow<Boolean> = _isLoadingDetail
+
+    private val _detailError = MutableStateFlow<String?>(null)
+    val detailError: StateFlow<String?> = _detailError
+
     init {
         // Combinar filtros y aplicarlos automáticamente cuando cambien
         viewModelScope.launch {
@@ -114,8 +121,21 @@ class RoomViewModel : ViewModel() {
      */
     fun loadRoomDetails(roomId: String) {
         viewModelScope.launch {
-            val room = RoomRepository.getRoomById(roomId)
-            _selectedRoom.value = room
+            _isLoadingDetail.value = true
+            _detailError.value = null
+            _selectedRoom.value = null
+            try {
+                val room = RoomRepository.getRoomById(roomId)
+                if (room != null) {
+                    _selectedRoom.value = room
+                } else {
+                    _detailError.value = "No se encontró la habitación"
+                }
+            } catch (e: Exception) {
+                _detailError.value = "Error al cargar: ${e.message}"
+            } finally {
+                _isLoadingDetail.value = false
+            }
         }
     }
 
