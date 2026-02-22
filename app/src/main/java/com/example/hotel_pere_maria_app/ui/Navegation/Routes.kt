@@ -9,9 +9,10 @@ sealed class Routes(val route: String) {
     object Add : Routes("Add")
     object User : Routes("User")
     object ForgotPassword : Routes("ForgotPassword")
-    object ModReserva: Routes("ModReserva")
-    object RoomList: Routes("RoomList")
-    object RoomDetail: Routes("RoomDetail/{roomId}") {
+    object ModReserva : Routes("ModReserva")
+    object RoomList : Routes("RoomList")
+    object Reviews : Routes("Reviews")
+    object RoomDetail : Routes("RoomDetail/{roomId}") {
         fun createRoute(roomId: String) = "RoomDetail/$roomId"
     }
 }
