@@ -45,7 +45,7 @@ La URL base de la API se configura en `BuildConfig.API_BASE_URL` desde el archiv
 
 ```
 app/src/main/java/com/example/hotel_pere_maria_app/
-├── HotelApplication.kt                  # Clase Application (inicialización)
+├── HotelApplication.kt                  # Clase Application (inicialización global)
 │
 └── ui/
     ├── MainActivity.kt                  # Actividad principal (punto de entrada)
@@ -55,8 +55,9 @@ app/src/main/java/com/example/hotel_pere_maria_app/
     │   ├── LoginResponse.kt             # Respuesta de login (token + usuario)
     │   ├── RegisterRequest.kt           # Petición de registro
     │   ├── Reservation.kt               # Modelo de reserva + repositorio
-    │   ├── Review.kt                    # Modelo de reseña + repositorio
-    │   ├── Room.kt                      # Modelo de habitación + repositorio
+    │   ├── Review.kt                    # Modelo de reseña + ReviewRepository
+    │   ├── Room.kt                      # Modelo de habitación (isOperational, isOccupiedNow)
+    │   ├── RoomRepository.kt            # Repositorio de habitaciones (cache + fallback)
     │   └── User.kt                      # Modelo de usuario
     │
     ├── Service/                         # Interfaces Retrofit y utilidades
@@ -76,28 +77,33 @@ app/src/main/java/com/example/hotel_pere_maria_app/
     │   ├── RoomViewModel.kt
     │   ├── AddViewModel.kt              # Crear reserva
     │   ├── ModReservaViewModel.kt       # Modificar reserva
-    │   ├── ReviewViewModel.kt           # Gestión de reseñas
+    │   ├── ReviewViewModel.kt           # Reseñas de una habitación
+    │   ├── MyReviewsViewModel.kt        # Reseñas globales del usuario
     │   ├── ProfileViewModel.kt
     │   └── ForgotPasswordViewModel.kt
     │
     ├── Views/                           # Pantallas Compose
-    │   ├── Login.kt
-    │   ├── Register.kt
-    │   ├── Home.kt                      # Pantalla principal con reservas
+    │   ├── Login.kt / Register.kt
+    │   ├── Home.kt                      # Dashboard con reservas del usuario
     │   ├── RoomList.kt                  # Listado de habitaciones
-    │   ├── RoomDetail.kt                # Detalle de habitación + reseñas
-    │   ├── Reviews.kt                   # Vista de reseñas del usuario
-    │   ├── Add.kt                       # Formulario de nueva reserva
-    │   ├── ModReserva.kt                # Edición de reserva
-    │   ├── Profile.kt                   # Perfil de usuario
-    │   └── ForgotPassword.kt
+    │   ├── RoomDetail.kt                # Detalle + reseñas
+    │   ├── Reviews.kt                   # Reseñas del usuario
+    │   ├── Add.kt / ModReserva.kt       # Crear / editar reserva
+    │   ├── Profile.kt
+    │   ├── ForgotPassword.kt
+    │   └── Components.kt                # Componentes reutilizables
+    │
+    ├── Components/
+    │   └── RoomSelectionDialog.kt       # Diálogo de selección de habitación
     │
     ├── Navegation/                      # Navegación
     │   ├── Routes.kt                    # Definición de rutas
     │   ├── Navegation.kt                # Grafo de navegación
     │   └── NavegationMain.kt
     │
-    └── Scaffold/                        # Componentes de layout
+    ├── Scaffold/                        # Componentes de layout
+    │
+    └── theme/                           # Tema visual de la aplicación
 ```
 
 ---
@@ -135,27 +141,12 @@ object RetrofitClient {
         chain.proceed(request.build())
     }
 
-    private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(authInterceptor)
-        .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        })
-        .build()
-
-    private val retrofit: Retrofit by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
     // Servicios disponibles
-    val reservationService: ReservationService by lazy { retrofit.create(ReservationService::class.java) }
-    val authService: AuthService by lazy { retrofit.create(AuthService::class.java) }
-    val roomService: RoomService by lazy { retrofit.create(RoomService::class.java) }
-    val reviewService: ReviewService by lazy { retrofit.create(ReviewService::class.java) }
-    val userService: UserService by lazy { retrofit.create(UserService::class.java) }
+    val reservationService: ReservationService by lazy { retrofit.create(...) }
+    val roomService: RoomService by lazy { retrofit.create(...) }
+    val reviewService: ReviewService by lazy { retrofit.create(...) }
+    val authService: AuthService by lazy { retrofit.create(...) }
+    val userService: UserService by lazy { retrofit.create(...) }
 }
 ```
 
@@ -179,12 +170,24 @@ interface ReservationService {
 
     @PATCH("reservation/update")
     suspend fun updateReservation(@Body datos: Map<String, String>): Response<Map<String, Any>>
+}
+```
 
-    @POST("reservation/getPrice")
-    suspend fun getPrice(@Body datos: Map<String, String>): Response<Map<String, Double>>
+#### Habitaciones (`RoomService.kt`)
 
-    @POST("reservation/getCancelationPrice")
-    suspend fun cancelationPrice(@Body datos: Map<String, String>): Response<Map<String, String>>
+```kotlin
+interface RoomService {
+    @GET("room/all")
+    suspend fun getAllRooms(): Response<List<Room>>
+
+    @GET("room/one")
+    suspend fun getRoomById(@Query("id") roomId: String): Response<Room>
+
+    @GET("room/available")
+    suspend fun getAvailableRoomsByDates(
+        @Query("check_in") checkIn: String,
+        @Query("check_out") checkOut: String
+    ): Response<List<Room>>
 }
 ```
 
@@ -208,55 +211,22 @@ interface ReviewService {
 
 > Se utiliza `@HTTP(method = "DELETE", hasBody = true)` porque Retrofit no permite body en `@DELETE` por defecto.
 
-#### Habitaciones (`RoomService.kt`)
-
-```kotlin
-interface RoomService {
-    @GET("room/all")
-    suspend fun getAllRooms(): Response<List<Room>>
-
-    @GET("room/one")
-    suspend fun getRoomById(@Query("id") roomId: String): Response<Room>
-
-    @GET("room/available")
-    suspend fun getAvailableRoomsByDates(
-        @Query("check_in") checkIn: String,
-        @Query("check_out") checkOut: String
-    ): Response<List<Room>>
-}
-```
-
 ---
 
 ## Gestión de sesión
 
 ### `SessionManager.kt`
 
-Almacena el token JWT y la información del usuario tanto en memoria como en `SharedPreferences` para permitir autologin:
+Almacena el token JWT y la información del usuario en memoria y en `SharedPreferences` (autologin):
 
 ```kotlin
 object SessionManager {
     var userToken: String? = null
     var userInfo: UserInfo? = null
 
-    // Recupera la sesión guardada al iniciar la app
-    fun restoreSession(): Boolean {
-        val token = prefs?.getString(KEY_TOKEN, null) ?: return false
-        val json = prefs?.getString(KEY_USER_JSON, null) ?: return false
-        userToken = token
-        userInfo = gson.fromJson(json, UserInfo::class.java)
-        return true
-    }
-
-    // Persiste la sesión tras un login exitoso
-    fun saveSession() { /* guarda token y userInfo en SharedPreferences */ }
-
-    // Cierra sesión: limpia memoria y preferencias
-    fun clear() {
-        userToken = null
-        userInfo = null
-        prefs?.edit()?.remove(KEY_TOKEN)?.remove(KEY_USER_JSON)?.apply()
-    }
+    fun restoreSession(): Boolean { /* recupera token y usuario de SharedPreferences */ }
+    fun saveSession() { /* persiste tras login exitoso */ }
+    fun clear() { /* cierra sesión: limpia memoria y preferencias */ }
 }
 ```
 
@@ -264,48 +234,84 @@ object SessionManager {
 
 ## Módulos principales
 
+### Habitaciones
+
+#### Modelo — `Room.kt`
+
+```kotlin
+data class Room(
+    val room_id: String,
+    val type: String,
+    val description: String,
+    val image: String,
+    val price_per_night: Double,
+    val max_occupancy: Int,
+    @SerializedName("is_operational") val isOperational: Boolean = true,
+    @SerializedName("is_occupied_now") val isOccupiedNow: Boolean = false,
+    val isAvailable: Boolean = true  // legacy
+) {
+    /** Libre para reservar ahora (en servicio y sin huésped en curso). */
+    fun isFreeNow(): Boolean = isOperational && !isOccupiedNow
+}
+```
+
+- **`isOperational`**: indica si la habitación está en servicio. La API excluye las habitaciones fuera de servicio de las búsquedas de disponibilidad.
+- **`isOccupiedNow`**: campo calculado por la API que indica si hay una reserva activa en este momento.
+- **`isFreeNow()`**: función de utilidad que combina ambos campos para determinar si la habitación está realmente libre.
+
+#### Repositorio — `RoomRepository.kt`
+
+Centraliza la obtención de habitaciones con caché en memoria y fallback automático:
+
+```kotlin
+object RoomRepository {
+    val rooms: StateFlow<List<Room>>              // Todas las habitaciones
+    val availableRooms: StateFlow<List<Room>>     // Habitaciones disponibles por fechas
+
+    suspend fun fetchRooms()                      // GET /room/all
+    suspend fun getRoomById(roomId: String): Room? // Busca en caché, recarga si no está
+    suspend fun fetchAvailableRoomsByDates(checkIn: String, checkOut: String) // GET /room/available
+}
+```
+
+Si `GET /room/available` falla, el repositorio ejecuta un **fallback** que carga todas las habitaciones con `GET /room/all` y filtra localmente por `isOperational` y `isFreeNow()`.
+
 ### Reseñas
 
-El módulo de reseñas permite a los clientes valorar habitaciones en las que se hayan alojado.
-
-#### Modelo y repositorio (`Review.kt`)
-
-El `ReviewRepository` centraliza las operaciones y mantiene estado reactivo:
+#### `ReviewRepository` — Estado reactivo global
 
 ```kotlin
 object ReviewRepository {
     val reviews: StateFlow<List<Review>>       // Reseñas de una habitación
-    val myReviews: StateFlow<List<Review>>     // Reseñas del usuario
+    val myReviews: StateFlow<List<Review>>     // Reseñas del usuario logueado
 
-    suspend fun fetchReviewsByRoom(roomId: String) { /* GET /review/room/:roomId */ }
-    suspend fun fetchMyReviews()                    { /* GET /review/mine */ }
-    suspend fun createReview(roomId: String, rating: Int, comment: String): Result<String> { /* POST /review/create */ }
-    suspend fun deleteReview(reviewId: String, roomId: String): Result<String>             { /* DELETE /review/delete */ }
+    suspend fun fetchReviewsByRoom(roomId: String)
+    suspend fun fetchMyReviews()
+    suspend fun createReview(roomId: String, rating: Int, comment: String): Result<String>
+    suspend fun deleteReview(reviewId: String, roomId: String): Result<String>
 }
 ```
 
-#### ViewModel (`ReviewViewModel.kt`)
+#### `ReviewViewModel` — Reseñas de una habitación
 
-Gestiona la lógica de presentación: verifica si el usuario tiene una reserva en la habitación (condición para poder reseñar), detecta si ya existe una reseña propia, y controla el formulario de envío.
+Gestiona la lógica de reseñas en el contexto de una habitación específica: verifica que el usuario tenga una reserva previa, detecta si ya existe una reseña propia, y controla el formulario.
+
+#### `MyReviewsViewModel` — Reseñas globales del usuario
+
+ViewModel dedicado a la pestaña de reseñas del usuario. Consume `ReviewRepository.myReviews`:
 
 ```kotlin
-class ReviewViewModel : ViewModel() {
-    val canReview: StateFlow<Boolean>     // ¿Tiene reserva en esta habitación?
-    val userReview: StateFlow<Review?>    // Reseña existente del usuario (si la hay)
+class MyReviewsViewModel : ViewModel() {
+    val myReviews = ReviewRepository.myReviews
+    val myReviewsLoading = ReviewRepository.myReviewsLoading
 
-    fun loadReviews(roomId: String) { /* carga reseñas + reservas en paralelo */ }
-    fun submitReview(roomId: String) { /* valida y envía POST /review/create */ }
-    fun deleteMyReview(roomId: String) { /* envía DELETE /review/delete */ }
+    fun refresh() {
+        viewModelScope.launch { ReviewRepository.fetchMyReviews() }
+    }
 }
 ```
 
-### Reservas
-
-El flujo de reservas incluye consulta de precio, creación, modificación y cancelación. Todas las operaciones pasan por el `ReservationRepository` y sus ViewModels correspondientes (`AddViewModel`, `ModReservaViewModel`, `HomeViewModel`).
-
-### Navegación (`Routes.kt`)
-
-Define todas las rutas de la aplicación como objetos sellados:
+### Navegación — `Routes.kt`
 
 ```kotlin
 sealed class Routes(val route: String) {
@@ -328,15 +334,33 @@ sealed class Routes(val route: String) {
 
 ## Cambios recientes
 
-### Correcciones en reseñas
+### Habitaciones — `isOperational` e `isOccupiedNow`
 
-- Se corrigió la obtención de reseñas por habitación (`GET /review/room/:roomId`), que fallaba por un error en la ruta.
-- Se adaptó la creación de reseñas (`POST /review/create`): el campo `user_name` ya no se envía desde el cliente, la API lo resuelve internamente a partir del token JWT.
-- Se implementó la eliminación de reseñas (`DELETE /review/delete`) utilizando `@HTTP(method = "DELETE", hasBody = true)` de Retrofit.
+- El modelo `Room.kt` incorpora los nuevos campos `isOperational` e `isOccupiedNow` (mapeados con `@SerializedName` desde `is_operational` e `is_occupied_now`).
+- Se añadió la función `isFreeNow()` que combina ambos campos.
+- `RoomRepository.kt` ahora utiliza estos campos en el filtrado de habitaciones disponibles.
+
+### Nuevo `RoomRepository.kt`
+
+- Repositorio centralizado con caché en `StateFlow`, búsqueda por ID con fallback, y obtención de habitaciones disponibles por rango de fechas con fallback automático.
+
+### Nuevo `MyReviewsViewModel.kt`
+
+- ViewModel independiente para la pestaña global de reseñas del usuario, separado del `ReviewViewModel` que opera en el contexto de una habitación.
+
+### `HotelApplication.kt` movido
+
+- La clase `Application` se reubicó a la raíz del paquete principal para seguir las convenciones de Android.
+
+### Correcciones previas en reseñas
+
+- Ruta `GET /review/room/:roomId` corregida.
+- Creación (`POST /review/create`): `user_name` resuelto por la API.
+- Eliminación (`DELETE /review/delete`): implementada con `@HTTP(method = "DELETE", hasBody = true)`.
 
 ### Refactorización de verbos HTTP
 
-- **Cancelación**: se migró de `POST /cancel` a `DELETE /cancel/:reservation_id?price=X`, utilizando `@DELETE` con `@Path` y `@Query`.
-- **Actualización**: se migró de `PUT /update` a `PATCH /update`.
+- Cancelación: `DELETE /cancel/:reservation_id?price=X`.
+- Actualización: `PATCH /update`.
 
 ---
