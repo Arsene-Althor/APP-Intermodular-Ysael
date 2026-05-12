@@ -23,7 +23,19 @@ Aplicación móvil Android desarrollada con **Kotlin** y **Jetpack Compose** par
 - SDK mínimo: API 24 (Android 7.0)
 - Conexión a la API del proyecto (`API-Intermodular-Ysael`)
 
-La URL base de la API se configura en `BuildConfig.API_BASE_URL` desde el archivo `build.gradle.kts`.
+La URL base de la API se configura en `BuildConfig.API_BASE_URL` dentro del archivo `build.gradle.kts`:
+
+```kotlin
+// app/build.gradle.kts
+buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3011/\"")
+```
+
+| Entorno             | URL base                                  |
+|---------------------|-------------------------------------------|
+| Emulador Android    | `http://10.0.2.2:3011/` (loopback al PC)  |
+| Dispositivo físico  | `http://<IP_LOCAL_PC>:3011/`               |
+
+> **Nota:** `10.0.2.2` es el alias del host del PC dentro del emulador de Android. En un dispositivo físico conectado a la misma red, se debe utilizar la IP local del equipo (ej: `192.168.1.X`). Tras modificar la URL, es necesario recompilar la app para regenerar `BuildConfig`.
 
 ---
 
@@ -51,6 +63,8 @@ app/src/main/java/com/example/hotel_pere_maria_app/
     ├── MainActivity.kt                  # Actividad principal (punto de entrada)
     │
     ├── Models/                          # Data classes y repositorios
+    │   ├── BookingAuditEntry.kt          # DTO de auditoría (campos mínimos para UI)
+    │   ├── BookingHistoryFriendlyMapper.kt # Mapeo action → texto usuario
     │   ├── LoginRequest.kt              # Petición de login
     │   ├── LoginResponse.kt             # Respuesta de login (token + usuario)
     │   ├── RegisterRequest.kt           # Petición de registro
@@ -76,7 +90,7 @@ app/src/main/java/com/example/hotel_pere_maria_app/
     │   ├── HomeViewModel.kt
     │   ├── RoomViewModel.kt
     │   ├── AddViewModel.kt              # Crear reserva
-    │   ├── ModReservaViewModel.kt       # Modificar reserva
+    │   ├── ModReservaViewModel.kt       # Modificar reserva + historial de auditoría
     │   ├── ReviewViewModel.kt           # Reseñas de una habitación
     │   ├── MyReviewsViewModel.kt        # Reseñas globales del usuario
     │   ├── ProfileViewModel.kt
@@ -158,6 +172,12 @@ object RetrofitClient {
 interface ReservationService {
     @GET("reservation/mine")
     suspend fun getMine(): Response<List<Reservation>>
+
+    /** Historial de auditoría (solo lectura). */
+    @GET("reservation/{reservation_id}/audit")
+    suspend fun getBookingAudit(
+        @Path("reservation_id") reservationId: String
+    ): Response<List<BookingAuditEntry>>
 
     @POST("reservation/add")
     suspend fun addReservation(@Body datos: Map<String, String>): Response<Map<String, String>>
@@ -276,6 +296,91 @@ object RoomRepository {
 
 Si `GET /room/available` falla, el repositorio ejecuta un **fallback** que carga todas las habitaciones con `GET /room/all` y filtra localmente por `isOperational` y `isFreeNow()`.
 
+### Historial de auditoría del cliente
+
+El usuario puede consultar la actividad de su reserva directamente desde la pantalla de modificación (`ModReserva`). El diseño sigue un principio claro: **no exponer datos técnicos al usuario final**.
+
+#### `BookingAuditEntry.kt` — DTO mínimo
+
+Modelo ligero que solo recoge los campos necesarios para la interfaz. Los campos técnicos (`previous_state`, `new_state`, `resumen_cambios`) **no se modelan** intencionadamente:
+
+```kotlin
+data class BookingAuditEntry(
+    val booking_id: String? = null,
+    val action: String? = null,
+    val timestamp: Date? = null,
+)
+```
+
+#### `BookingHistoryFriendlyMapper.kt` — Mapeo a texto legible
+
+Convierte la acción cruda de la API a un mensaje comprensible para el usuario:
+
+```kotlin
+object BookingHistoryFriendlyMapper {
+    fun toUserMessage(action: String?): String {
+        return when (action?.trim()?.uppercase(Locale.ROOT)) {
+            "CREATED", "CREATE"                            -> "Reserva creada"
+            "PAYMENT_RECEIVED", "PAYMENT", "PAID", "PAGO"  -> "Pago recibido"
+            "CHECK_IN", "CHECKIN", "CHECK_IN_DONE"         -> "Check-in realizado"
+            "EXTRA_SERVICE", "SERVICE_ADDED", "SERVICE_EXTRA" -> "Servicio extra añadido"
+            "UPDATED", "UPDATE"                            -> "Cambios en tu reserva"
+            "CANCELED", "CANCELLED", "CANCEL"              -> "Reserva cancelada"
+            else                                           -> "Actividad en tu reserva"
+        }
+    }
+}
+```
+
+> **Nota:** Actualmente la API registra solo `CREATED`, `UPDATED` y `CANCELED`. Los textos para pagos, check-in y extras están preparados para cuando el backend incorpore esas acciones.
+
+#### `ModReservaViewModel.kt` — Carga del historial
+
+Tras cargar los datos de la reserva (`cargarDatos()`), el ViewModel solicita el historial y lo transforma a objetos `HistorialItemUi` listos para Compose:
+
+```kotlin
+fun cargarDatos() {
+    // ... carga campos de la reserva ...
+    viewModelScope.launch { cargarHistorialAuditoria() }
+}
+
+private suspend fun cargarHistorialAuditoria() {
+    _uiState.update { it.copy(historialCargando = true) }
+    val response = RetrofitClient.reservationService.getBookingAudit(reservaId)
+    val list = if (response.isSuccessful) response.body().orEmpty() else emptyList()
+    val items = list.map { entry ->
+        HistorialItemUi(
+            fechaTexto = entry.timestamp?.let { fmt.format(it) } ?: "—",
+            mensaje = BookingHistoryFriendlyMapper.toUserMessage(entry.action)
+        )
+    }
+    _uiState.update { it.copy(historialItems = items, historialCargando = false) }
+}
+```
+
+El estado expuesto al Compose:
+
+```kotlin
+data class ModuiState(
+    // ... campos de la reserva ...
+    val historialItems: List<HistorialItemUi> = emptyList(),
+    val historialCargando: Boolean = false,
+)
+
+data class HistorialItemUi(
+    val fechaTexto: String,   // "12/05/2026 22:30"
+    val mensaje: String,      // "Reserva creada"
+)
+```
+
+#### Vista — `ModReserva.kt`
+
+La pantalla de modificación de reserva muestra un bloque "Tu actividad" con tres estados:
+
+- **Cargando**: indicador de progreso.
+- **Vacío**: mensaje informativo cuando no hay historial.
+- **Lista**: fecha + mensaje en formato legible, dentro de un `verticalScroll`.
+
 ### Reseñas
 
 #### `ReviewRepository` — Estado reactivo global
@@ -334,33 +439,30 @@ sealed class Routes(val route: String) {
 
 ## Cambios recientes
 
+### Historial de auditoría en Android
+
+- Nuevos archivos: `BookingAuditEntry.kt` (DTO mínimo), `BookingHistoryFriendlyMapper.kt` (mapeo action → texto usuario).
+- `ReservationService.kt` incorpora `GET reservation/{reservation_id}/audit`.
+- `ModReservaViewModel.kt` carga el historial tras obtener los datos de la reserva, exponiendo `historialItems` y `historialCargando` en el estado UI.
+- `ModReserva.kt` muestra el bloque "Tu actividad" con loading, vacío y lista de eventos.
+- Los textos de pago, check-in y servicios extra están preparados para cuando la API registre esas acciones.
+
+### Cambio de `API_BASE_URL`
+
+- La URL base pasó de `http://10.0.2.2:3000/` a `http://10.0.2.2:3011/`, alineada con `PORT=3011` en el `.env` de la API.
+- Es necesario recompilar la app tras este cambio para regenerar `BuildConfig`.
+
 ### Habitaciones — `isOperational` e `isOccupiedNow`
 
-- El modelo `Room.kt` incorpora los nuevos campos `isOperational` e `isOccupiedNow` (mapeados con `@SerializedName` desde `is_operational` e `is_occupied_now`).
+- El modelo `Room.kt` incorpora los nuevos campos `isOperational` e `isOccupiedNow`.
 - Se añadió la función `isFreeNow()` que combina ambos campos.
-- `RoomRepository.kt` ahora utiliza estos campos en el filtrado de habitaciones disponibles.
+- `RoomRepository.kt` utiliza estos campos en el filtrado de habitaciones disponibles.
 
-### Nuevo `RoomRepository.kt`
+### Otros cambios previos
 
-- Repositorio centralizado con caché en `StateFlow`, búsqueda por ID con fallback, y obtención de habitaciones disponibles por rango de fechas con fallback automático.
-
-### Nuevo `MyReviewsViewModel.kt`
-
-- ViewModel independiente para la pestaña global de reseñas del usuario, separado del `ReviewViewModel` que opera en el contexto de una habitación.
-
-### `HotelApplication.kt` movido
-
-- La clase `Application` se reubicó a la raíz del paquete principal para seguir las convenciones de Android.
-
-### Correcciones previas en reseñas
-
-- Ruta `GET /review/room/:roomId` corregida.
-- Creación (`POST /review/create`): `user_name` resuelto por la API.
-- Eliminación (`DELETE /review/delete`): implementada con `@HTTP(method = "DELETE", hasBody = true)`.
-
-### Refactorización de verbos HTTP
-
-- Cancelación: `DELETE /cancel/:reservation_id?price=X`.
-- Actualización: `PATCH /update`.
+- `RoomRepository.kt`: repositorio centralizado con caché y fallback automático.
+- `MyReviewsViewModel.kt`: ViewModel independiente para reseñas del usuario.
+- Correcciones en reseñas: ruta `GET /review/room/:roomId`, `user_name` resuelto por la API, eliminación con `@HTTP(method = "DELETE", hasBody = true)`.
+- Verbos HTTP: cancelación con `DELETE`, actualización con `PATCH`.
 
 ---
