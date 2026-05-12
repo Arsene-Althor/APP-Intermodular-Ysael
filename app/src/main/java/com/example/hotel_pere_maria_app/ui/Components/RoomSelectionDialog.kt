@@ -68,7 +68,7 @@ fun RoomSelectionDialog(
 
     // Lista final: si hay fechas el repositorio ya filtra/hace fallback por disponibilidad
     val displayRooms = if (hasDates) availableByDates else {
-        if (showOnlyAvailable) allRooms.filter { it.isAvailable } else allRooms
+        if (showOnlyAvailable) allRooms.filter { it.isOperational && it.isFreeNow() } else allRooms
     }
 
 
@@ -278,7 +278,7 @@ fun RoomCardCompact(
                 ) {
                     // Precio
                     Text(
-                        text = "â‚¬${room.price_per_night}/noche",
+                        text = "âÿ¬${room.price_per_night}/noche",
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold

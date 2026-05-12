@@ -13,6 +13,10 @@ import retrofit2.http.Path
  */
 interface ReviewService {
 
+    /** Reseñas del usuario autenticado (JWT). */
+    @GET("review/mine")
+    suspend fun getMyReviews(): Response<List<Review>>
+
     /**
      * Obtiene todas las reseñas de una habitación
      * @param roomId ID de la habitación (ej: HAB-101)

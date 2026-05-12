@@ -6,9 +6,11 @@ import com.example.hotel_pere_maria_app.ui.Models.ReservationRepository
 import com.example.hotel_pere_maria_app.ui.Models.Review
 import com.example.hotel_pere_maria_app.ui.Models.ReviewRepository
 import com.example.hotel_pere_maria_app.ui.Service.SessionManager
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 
 /**
  * ViewModel para gestionar las reseñas de una habitación. Controla: carga de reseñas, comprobación
@@ -46,24 +48,31 @@ class ReviewViewModel : ViewModel() {
     /** Carga las reseñas de una habitación y comprueba si el usuario puede reseñar */
     fun loadReviews(roomId: String) {
         viewModelScope.launch {
-            // Cargar reseñas y reservas en paralelo
-            ReviewRepository.fetchReviewsByRoom(roomId)
-            // Asegurar que las reservas del usuario están cargadas
-            ReservationRepository.fetchReservations()
-            checkCanReview(roomId)
+            supervisorScope {
+                val reservas = async { ReservationRepository.fetchReservations() }
+                val reseñas = async { ReviewRepository.fetchReviewsByRoom(roomId) }
+                reservas.await()
+                reseñas.await()
+                checkCanReview(roomId)
+            }
         }
     }
 
     /** Comprueba si el usuario tiene una reserva en la habitación y si ya ha dejado una reseña */
     private fun checkCanReview(roomId: String) {
-        val userId = SessionManager.userInfo?.user_id ?: return
+        val userId = SessionManager.userInfo?.user_id
+        if (userId.isNullOrBlank()) {
+            _canReview.value = false
+            _userReview.value = null
+            return
+        }
 
-        // Comprobar si tiene reserva en esta habitación
+        // Comprobar si tiene reserva en esta habitación (cualquier rol con reserva en BD puede reseñar vía API)
         val reservations = ReservationRepository.reservations.value
         val hasReservation = reservations.any { it.room_id == roomId }
         _canReview.value = hasReservation
 
-        // Buscar si ya tiene una reseña
+        // Buscar si ya tiene una reseña en esta habitación
         val existing = ReviewRepository.reviews.value.find { it.user_id == userId }
         _userReview.value = existing
     }

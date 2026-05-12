@@ -86,9 +86,13 @@ class RoomViewModel : ViewModel() {
             filtered = filtered.filter { it.type.equals(type, ignoreCase = true) }
         }
 
-        // Filtrar por disponibilidad
-        availability?.let { isAvailable ->
-            filtered = filtered.filter { it.isAvailable == isAvailable }
+        // Filtrar por disponibilidad real: libre ahora + en servicio vs ocupada/fuera de servicio
+        availability?.let { wantFree ->
+            filtered = if (wantFree) {
+                filtered.filter { it.isOperational && !it.isOccupiedNow }
+            } else {
+                filtered.filter { !it.isOperational || it.isOccupiedNow }
+            }
         }
 
         return filtered

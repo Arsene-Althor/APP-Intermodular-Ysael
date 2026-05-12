@@ -34,7 +34,35 @@ object ReviewRepository {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    // ── Reseñas del usuario (pestaña global) ──────────────────────────────────
+    private val _myReviews = MutableStateFlow<List<Review>>(emptyList())
+    val myReviews: StateFlow<List<Review>> = _myReviews
+
+    private val _myReviewsLoading = MutableStateFlow(false)
+    val myReviewsLoading: StateFlow<Boolean> = _myReviewsLoading
+
+    private val _myReviewsError = MutableStateFlow<String?>(null)
+    val myReviewsError: StateFlow<String?> = _myReviewsError
+
     // ── Operaciones ───────────────────────────────────────────────────────────
+
+    /** Reseñas escritas por el usuario logueado (requiere Authorization). */
+    suspend fun fetchMyReviews() {
+        _myReviewsLoading.value = true
+        _myReviewsError.value = null
+        try {
+            val response = RetrofitClient.reviewService.getMyReviews()
+            if (response.isSuccessful) {
+                _myReviews.update { response.body() ?: emptyList() }
+            } else {
+                _myReviewsError.value = "Error ${response.code()}"
+            }
+        } catch (e: Exception) {
+            _myReviewsError.value = e.message ?: "Error de conexión"
+        } finally {
+            _myReviewsLoading.value = false
+        }
+    }
 
     /** Obtiene todas las reseñas de una habitación */
     suspend fun fetchReviewsByRoom(roomId: String) {
@@ -64,8 +92,8 @@ object ReviewRepository {
                     mapOf("room_id" to roomId, "rating" to rating.toString(), "comment" to comment)
             val response = RetrofitClient.reviewService.createReview(body)
             if (response.isSuccessful) {
-                // Recargar las reseñas tras crear
                 fetchReviewsByRoom(roomId)
+                fetchMyReviews()
                 Result.success(response.body()?.get("message") ?: "Reseña creada")
             } else {
                 val errorMsg = response.errorBody()?.string() ?: "Error ${response.code()}"
@@ -83,6 +111,7 @@ object ReviewRepository {
             val response = RetrofitClient.reviewService.deleteReview(body)
             if (response.isSuccessful) {
                 fetchReviewsByRoom(roomId)
+                fetchMyReviews()
                 Result.success("Reseña eliminada")
             } else {
                 val errorMsg = response.errorBody()?.string() ?: "Error ${response.code()}"

@@ -179,6 +179,7 @@ class ProfileViewModel : ViewModel() {
                     // Actualizar SessionManager
                     SessionManager.userInfo =
                             SessionManager.userInfo?.copy(profileImage = imagePath)
+                    SessionManager.saveSession()
                 } else {
                     val errorBody = response.errorBody()?.string() ?: "Error desconocido"
                     _uiState.update { it.copy(saveStatus = ProfileState.Error(errorBody)) }
@@ -229,6 +230,7 @@ class ProfileViewModel : ViewModel() {
                                     city = state.city.ifBlank { null },
                                     gender = state.gender
                             )
+                    SessionManager.saveSession()
                     _uiState.update {
                         it.copy(
                                 isEditing = false,

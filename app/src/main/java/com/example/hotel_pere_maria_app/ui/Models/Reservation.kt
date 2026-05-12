@@ -8,14 +8,14 @@ import kotlinx.coroutines.flow.update
 import java.util.Date
 
 data class Reservation(
-    val reservation_id:String,
+    val reservation_id: String,
     val room_id: String,
-    val user_id:String,
+    val user_id: String,
     val check_in: Date,
     val check_out: Date,
     val price: Number,
-    val cancelation_date: Date,
-    val createdBy:String
+    val cancelation_date: Date? = null,
+    val createdBy: String
 )
 
 object ReservationRepository {

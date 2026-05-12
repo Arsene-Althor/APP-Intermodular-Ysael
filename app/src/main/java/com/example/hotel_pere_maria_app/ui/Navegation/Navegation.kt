@@ -2,6 +2,7 @@ package com.example.hotel_pere_maria_app.ui.Navegation
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -14,13 +15,22 @@ import com.example.hotel_pere_maria_app.ui.Views.Login
 import com.example.hotel_pere_maria_app.ui.Views.ModReserva
 import com.example.hotel_pere_maria_app.ui.Views.Profile
 import com.example.hotel_pere_maria_app.ui.Views.Register
+import com.example.hotel_pere_maria_app.ui.Service.SessionManager
 import com.example.hotel_pere_maria_app.ui.Views.ReviewsScreen
 import com.example.hotel_pere_maria_app.ui.Views.RoomDetail
 import com.example.hotel_pere_maria_app.ui.Views.RoomList
 
 @Composable
 fun NavigationLogin(navigationController: NavHostController) {
-    NavHost(navController = navigationController, startDestination = Routes.Login.route) {
+    val startRoute =
+            remember {
+                if (!SessionManager.userToken.isNullOrBlank() && SessionManager.userInfo != null) {
+                    Routes.Scaffold.route
+                } else {
+                    Routes.Login.route
+                }
+            }
+    NavHost(navController = navigationController, startDestination = startRoute) {
         composable(Routes.Login.route) {
             Login(
                     onLoginSuccess = {

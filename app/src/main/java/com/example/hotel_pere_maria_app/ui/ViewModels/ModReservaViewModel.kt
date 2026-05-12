@@ -138,13 +138,12 @@ class ModReservaViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
 
     fun cancelarReserva(){
         val datos = _uiState.value
-        val requestCancelReserva = mapOf(
-            "reservation_id" to datos.reservation_id,
-            "price" to datos.precioCancel
-        )
         viewModelScope.launch {
             try {
-                var response = RetrofitClient.reservationService.cancelReservation(requestCancelReserva as Map<String, String>)
+                var response = RetrofitClient.reservationService.cancelReservation(
+                    datos.reservation_id,
+                    datos.precioCancel
+                )
                 if(response.isSuccessful){
                     ReservationRepository.fetchReservations()
                     _uiState.update { it.copy(mensajeRespuesta = "¡Reserva cancelada con exito!", errorRespusta = false) }

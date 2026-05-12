@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.hotel_pere_maria_app.ui.Models.LoginRequest
 import com.example.hotel_pere_maria_app.ui.Service.RetrofitClient
 import com.example.hotel_pere_maria_app.ui.Service.SessionManager
-import com.example.hotel_pere_maria_app.ui.Service.UserInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -55,7 +54,8 @@ class LoginViewModel() : ViewModel() {
 
                     // 1. Guardamos el token y los datos del usuario en la sesión global
                     SessionManager.userToken = loginBody?.token
-                    SessionManager.userInfo = loginBody?.user as UserInfo?
+                    SessionManager.userInfo = loginBody?.user
+                    SessionManager.saveSession()
 
                     // 2. Actualizamos el estado a Success para que la UI navegue a la siguiente
                     // pantalla

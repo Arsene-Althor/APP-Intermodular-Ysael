@@ -110,7 +110,7 @@ fun RoomList(
 }
 
 /**
- * Sección de filtros con chips para tipo y disponibilidad
+ * Secci?n de filtros con chips para tipo y disponibilidad
  */
 @Composable
 fun FilterSection(
@@ -149,7 +149,7 @@ fun FilterSection(
         Spacer(modifier = Modifier.height(12.dp))
         
         Text(
-            text = "Filtrar por disponibilidad:",
+            text = "Filtrar por estado:",
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold
         )
@@ -167,19 +167,19 @@ fun FilterSection(
             FilterChip(
                 selected = selectedAvailability == true,
                 onClick = { onAvailabilitySelected(true) },
-                label = { Text("Disponibles") }
+                label = { Text("Libres ahora") }
             )
             FilterChip(
                 selected = selectedAvailability == false,
                 onClick = { onAvailabilitySelected(false) },
-                label = { Text("No disponibles") }
+                label = { Text("Ocupadas / fuera de servicio") }
             )
         }
     }
 }
 
 /**
- * Tarjeta individual de habitación
+ * Tarjeta individual de habitaci?n
  */
 @Composable
 fun RoomCard(
@@ -198,7 +198,7 @@ fun RoomCard(
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
-            // Imagen de la habitación
+            // Imagen de la habitaci?n
             AsyncImage(
                 model = room.image,
                 contentDescription = "Imagen de ${room.type}",
@@ -210,7 +210,7 @@ fun RoomCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Información de la habitación
+            // Informaci?n de la habitaci?n
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -229,16 +229,22 @@ fun RoomCard(
                         fontWeight = FontWeight.Bold
                     )
                     
-                    // Badge de disponibilidad
+                    val badgeText = when {
+                        !room.isOperational -> "Fuera de servicio"
+                        room.isOccupiedNow -> "Reservada"
+                        else -> "Libre"
+                    }
+                    val badgeColor = when {
+                        !room.isOperational -> Color(0xFF9E9E9E)
+                        room.isOccupiedNow -> Color(0xFFF44336)
+                        else -> Color(0xFF4CAF50)
+                    }
                     Surface(
-                        color = if (room.isAvailable) 
-                            Color(0xFF4CAF50) 
-                        else 
-                            Color(0xFFF44336),
+                        color = badgeColor,
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
-                            text = if (room.isAvailable) "Disponible" else "Ocupada",
+                            text = badgeText,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White
@@ -250,7 +256,7 @@ fun RoomCard(
 
                 // Precio
                 Text(
-                    text = "€${room.price_per_night}/noche",
+                    text = "���${room.price_per_night}/noche",
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -258,7 +264,7 @@ fun RoomCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Descripción
+                // Descripci?n
                 Text(
                     text = room.description,
                     style = MaterialTheme.typography.bodySmall,
@@ -269,13 +275,13 @@ fun RoomCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Valoración
+                // Valoraci?n
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.Star,
-                        contentDescription = "Valoración",
+                        contentDescription = "Valoraci?n",
                         tint = Color(0xFFFFC107),
                         modifier = Modifier.size(20.dp)
                     )
@@ -288,18 +294,18 @@ fun RoomCard(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Ocupación máxima
+                // Ocupaci?n m?xima
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.Person,
-                        contentDescription = "Ocupación",
+                        contentDescription = "Ocupaci?n",
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Máx. ${room.max_occupancy} personas",
+                        text = "M?x. ${room.max_occupancy} personas",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
