@@ -1,6 +1,6 @@
 # APP Android — Hotel Pere María
 
-Aplicación móvil Android desarrollada con **Kotlin** y **Jetpack Compose** para los clientes del Hotel Pere María. Permite consultar habitaciones, gestionar reservas, escribir reseñas y administrar el perfil de usuario. Se comunica con la API REST del proyecto intermodular mediante **Retrofit**.
+Aplicación móvil Android desarrollada con **Kotlin** y **Jetpack Compose** para los clientes del Hotel Pere María. Ofrece una experiencia de búsqueda tipo Booking con filtros de fechas, capacidad y precio, gestión completa de reservas con historial de actividad, reseñas de habitaciones y perfil de usuario. Se comunica con la API REST del proyecto intermodular mediante **Retrofit**.
 
 ---
 
@@ -10,6 +10,7 @@ Aplicación móvil Android desarrollada con **Kotlin** y **Jetpack Compose** par
 - [Tecnologías utilizadas](#tecnologías-utilizadas)
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Arquitectura](#arquitectura)
+- [Navegación y layout](#navegación-y-layout)
 - [Conexión con la API](#conexión-con-la-api)
 - [Gestión de sesión](#gestión-de-sesión)
 - [Módulos principales](#módulos-principales)
@@ -45,6 +46,7 @@ buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3011/\"")
 |--------------------|----------------------------------------------------|
 | Kotlin             | Lenguaje principal                                 |
 | Jetpack Compose    | Interfaz de usuario declarativa                    |
+| Material 3         | Componentes y estilos visuales                     |
 | Retrofit + Gson    | Cliente HTTP y serialización JSON                  |
 | OkHttp             | Interceptores para autenticación y logging         |
 | Coroutines + Flow  | Programación asíncrona y estado reactivo           |
@@ -60,15 +62,14 @@ app/src/main/java/com/example/hotel_pere_maria_app/
 ├── HotelApplication.kt                  # Clase Application (inicialización global)
 │
 └── ui/
-    ├── MainActivity.kt                  # Actividad principal (punto de entrada)
+    ├── MainActivity.kt                  # Actividad principal
     │
-    ├── Models/                          # Data classes y repositorios
-    │   ├── BookingAuditEntry.kt          # DTO de auditoría (campos mínimos para UI)
+    ├── Models/                          # Data classes, repositorios y estado
+    │   ├── BookingAuditEntry.kt         # DTO de auditoría (campos mínimos para UI)
     │   ├── BookingHistoryFriendlyMapper.kt # Mapeo action → texto usuario
-    │   ├── LoginRequest.kt              # Petición de login
-    │   ├── LoginResponse.kt             # Respuesta de login (token + usuario)
-    │   ├── RegisterRequest.kt           # Petición de registro
-    │   ├── Reservation.kt               # Modelo de reserva + repositorio
+    │   ├── BookingSearchState.kt        # Criterios de búsqueda compartidos entre pantallas
+    │   ├── LoginRequest.kt / LoginResponse.kt / RegisterRequest.kt / RegisterResponse.kt
+    │   ├── Reservation.kt               # Modelo de reserva + ReservationRepository
     │   ├── Review.kt                    # Modelo de reseña + ReviewRepository
     │   ├── Room.kt                      # Modelo de habitación (isOperational, isOccupiedNow)
     │   ├── RoomRepository.kt            # Repositorio de habitaciones (cache + fallback)
@@ -77,47 +78,55 @@ app/src/main/java/com/example/hotel_pere_maria_app/
     ├── Service/                         # Interfaces Retrofit y utilidades
     │   ├── RetrofitClient.kt            # Configuración centralizada de Retrofit
     │   ├── AuthService.kt               # Endpoints de autenticación
-    │   ├── ReservationService.kt        # Endpoints de reservas
+    │   ├── ReservationService.kt        # Endpoints de reservas + auditoría
     │   ├── RoomService.kt               # Endpoints de habitaciones
     │   ├── ReviewService.kt             # Endpoints de reseñas
     │   ├── UserService.kt               # Endpoints de usuarios
     │   ├── SessionManager.kt            # Gestión de sesión y autologin
     │   └── ThemeManager.kt              # Preferencias de tema
     │
-    ├── ViewModels/                      # Lógica de presentación (MVVM)
-    │   ├── LoginViewModel.kt
-    │   ├── RegisterViewModel.kt
-    │   ├── HomeViewModel.kt
-    │   ├── RoomViewModel.kt
-    │   ├── AddViewModel.kt              # Crear reserva
-    │   ├── ModReservaViewModel.kt       # Modificar reserva + historial de auditoría
+    ├── ViewModels/
+    │   ├── BookingHomeViewModel.kt      # Home tipo Booking (búsqueda)
+    │   ├── SearchResultsViewModel.kt    # Resultados filtrados + ordenación
+    │   ├── ModReservaViewModel.kt       # Edición de reserva + historial de auditoría
+    │   ├── ReservationAuditViewModel.kt # Auditoría independiente de una reserva
     │   ├── ReviewViewModel.kt           # Reseñas de una habitación
     │   ├── MyReviewsViewModel.kt        # Reseñas globales del usuario
-    │   ├── ProfileViewModel.kt
-    │   └── ForgotPasswordViewModel.kt
+    │   ├── RoomViewModel.kt             # Listado y filtrado de habitaciones
+    │   ├── AddViewModel.kt              # Crear reserva
+    │   ├── LoginViewModel.kt / RegisterViewModel.kt / ForgotPasswordViewModel.kt
+    │   ├── HomeViewModel.kt             # Información del hotel (mapa, contacto)
+    │   └── ProfileViewModel.kt
     │
     ├── Views/                           # Pantallas Compose
-    │   ├── Login.kt / Register.kt
-    │   ├── Home.kt                      # Dashboard con reservas del usuario
-    │   ├── RoomList.kt                  # Listado de habitaciones
-    │   ├── RoomDetail.kt                # Detalle + reseñas
-    │   ├── Reviews.kt                   # Reseñas del usuario
-    │   ├── Add.kt / ModReserva.kt       # Crear / editar reserva
-    │   ├── Profile.kt
-    │   ├── ForgotPassword.kt
+    │   ├── BookingHomeScreen.kt         # Pantalla principal (búsqueda tipo Booking)
+    │   ├── SearchResultsScreen.kt       # Resultados de búsqueda con chips de ordenación
+    │   ├── MyBookingsScreens.kt         # Reservas activas + historial completo
+    │   ├── ReservationAuditScreen.kt    # Auditoría amigable de una reserva
+    │   ├── MyAccountScreen.kt           # Mi cuenta (soporte, reservas, perfil)
+    │   ├── RoomList.kt                  # Catálogo de habitaciones (tarjetas M3)
+    │   ├── RoomDetail.kt                # Detalle + galería + reseñas
+    │   ├── Reviews.kt                   # Reseñas del usuario (acceso desde perfil)
+    │   ├── ModReserva.kt                # Edición de reserva + actividad
+    │   ├── Add.kt                       # Formulario de nueva reserva
+    │   ├── Login.kt / Register.kt / ForgotPassword.kt
+    │   ├── Profile.kt                   # Perfil y ajustes
+    │   ├── Home.kt                      # (Legacy, no en NavHost)
     │   └── Components.kt                # Componentes reutilizables
     │
     ├── Components/
     │   └── RoomSelectionDialog.kt       # Diálogo de selección de habitación
     │
-    ├── Navegation/                      # Navegación
+    ├── Navegation/
     │   ├── Routes.kt                    # Definición de rutas
     │   ├── Navegation.kt                # Grafo de navegación
     │   └── NavegationMain.kt
     │
-    ├── Scaffold/                        # Componentes de layout
+    ├── Scaffold/
+    │   ├── ScaffoldMain.kt              # Layout principal (sin bottom bar)
+    │   └── TopAppBar.kt                 # Barra superior (Reservas + Mi Cuenta)
     │
-    └── theme/                           # Tema visual de la aplicación
+    └── theme/                           # Tema visual
 ```
 
 ---
@@ -137,11 +146,60 @@ View (Compose) → ViewModel → Repository → Service (Retrofit) → API REST
 
 ---
 
+## Navegación y layout
+
+### Rutas — `Routes.kt`
+
+```kotlin
+sealed class Routes(val route: String) {
+    object Login : Routes("Login")
+    object Register : Routes("Register")
+    object Home : Routes("Home")                    // BookingHomeScreen
+    object SearchResults : Routes("SearchResults")  // Resultados de búsqueda
+    object MyAccount : Routes("MyAccount")          // Mi cuenta
+    object Reservations : Routes("Reservations")    // Mis reservas activas
+    object ReservationHistory : Routes("ReservationHistory")
+    object ReservationAudit : Routes("ReservationAudit/{reservationId}") {
+        fun createRoute(reservationId: String) = "ReservationAudit/$reservationId"
+    }
+    object RoomList : Routes("RoomList")
+    object RoomDetail : Routes("RoomDetail/{roomId}") {
+        fun createRoute(roomId: String) = "RoomDetail/$roomId"
+    }
+    object Reviews : Routes("Reviews")
+    object Add : Routes("Add")
+    object ModReserva : Routes("ModReserva")
+    object User : Routes("User")
+    object ForgotPassword : Routes("ForgotPassword")
+}
+```
+
+### Scaffold — Sin bottom bar
+
+El scaffold principal utiliza solo una **TopAppBar** con dos iconos de acción:
+
+- **Calendario** (`Icons.Event`) → navega a `Reservations` (mis reservas).
+- **Persona** (`Icons.Person`) → navega a `MyAccount` (mi cuenta).
+
+Se oculta el scaffold completo en pantallas de lectura/gestión a pantalla completa:
+
+```kotlin
+val mostrarScafold = when {
+    currentRoute == null -> true
+    currentRoute.startsWith(Routes.ModReserva.route) -> false
+    currentRoute.startsWith("ReservationAudit") -> false
+    currentRoute == Routes.ReservationHistory.route -> false
+    else -> true
+}
+```
+
+---
+
 ## Conexión con la API
 
 ### `RetrofitClient.kt`
 
-Punto central de configuración HTTP. Incluye un interceptor que añade automáticamente el token JWT a cada petición:
+Punto central de configuración HTTP con interceptor JWT automático:
 
 ```kotlin
 object RetrofitClient {
@@ -155,7 +213,6 @@ object RetrofitClient {
         chain.proceed(request.build())
     }
 
-    // Servicios disponibles
     val reservationService: ReservationService by lazy { retrofit.create(...) }
     val roomService: RoomService by lazy { retrofit.create(...) }
     val reviewService: ReviewService by lazy { retrofit.create(...) }
@@ -173,7 +230,6 @@ interface ReservationService {
     @GET("reservation/mine")
     suspend fun getMine(): Response<List<Reservation>>
 
-    /** Historial de auditoría (solo lectura). */
     @GET("reservation/{reservation_id}/audit")
     suspend fun getBookingAudit(
         @Path("reservation_id") reservationId: String
@@ -229,8 +285,6 @@ interface ReviewService {
 }
 ```
 
-> Se utiliza `@HTTP(method = "DELETE", hasBody = true)` porque Retrofit no permite body en `@DELETE` por defecto.
-
 ---
 
 ## Gestión de sesión
@@ -254,6 +308,54 @@ object SessionManager {
 
 ## Módulos principales
 
+### Pantalla principal — Búsqueda tipo Booking
+
+La pantalla de inicio (`BookingHomeScreen.kt`) sustituye al antiguo `Home.kt` y ofrece una experiencia de búsqueda con:
+
+- **Próxima reserva** del usuario (si existe).
+- **Selector de fechas** (check-in / check-out).
+- **Slider de huéspedes** (1–8 personas).
+- **RangeSlider de precio** (rango personalizable).
+- **Botón Buscar** → navega a resultados.
+- Accesos directos a: nueva reserva, catálogo de habitaciones, mis reservas.
+
+#### `BookingSearchState.kt` — Estado compartido
+
+Criterios de búsqueda que persisten en memoria entre la pantalla de búsqueda y la de resultados:
+
+```kotlin
+data class BookingSearchCriteria(
+    val checkIn: String,
+    val checkOut: String,
+    val guests: Int,
+    val priceMin: Double,
+    val priceMax: Double,
+)
+
+object BookingSearchState {
+    val criteria: StateFlow<BookingSearchCriteria?> = _criteria.asStateFlow()
+    fun setCriteria(c: BookingSearchCriteria) { /* guarda en StateFlow */ }
+    fun clear() { /* limpia criterios */ }
+}
+```
+
+### Resultados de búsqueda — `SearchResultsScreen.kt`
+
+Lista de habitaciones filtradas por los criterios de búsqueda. Incluye:
+
+- **Chips de ordenación**: valoración (↑↓), precio (↑↓), tipo A–Z.
+- **Chips de servicios extra** (Desayuno, Spa, Parking…): solo UI, pendiente de backend.
+- Navegación a `RoomDetail` al pulsar una habitación.
+
+```kotlin
+enum class RoomSortOption(val label: String) {
+    RATING_DESC("Valoración: mayor primero"),
+    PRICE_ASC("Precio: más barato"),
+    PRICE_DESC("Precio: más caro"),
+    NAME("Tipo A–Z"),
+}
+```
+
 ### Habitaciones
 
 #### Modelo — `Room.kt`
@@ -266,203 +368,141 @@ data class Room(
     val image: String,
     val price_per_night: Double,
     val max_occupancy: Int,
-    @SerializedName("is_operational") val isOperational: Boolean = true,
-    @SerializedName("is_occupied_now") val isOccupiedNow: Boolean = false,
-    val isAvailable: Boolean = true  // legacy
+    @SerializedName(value = "is_operational", alternate = ["isOperational"])
+    val isOperational: Boolean? = null,
+    @SerializedName(value = "is_occupied_now", alternate = ["isOccupiedNow"])
+    val isOccupiedNow: Boolean? = null,
 ) {
-    /** Libre para reservar ahora (en servicio y sin huésped en curso). */
-    fun isFreeNow(): Boolean = isOperational && !isOccupiedNow
+    fun isInService(): Boolean = isOperational != false
+    fun isOccupiedNowEffective(): Boolean = isOccupiedNow == true
+    fun isFreeNow(): Boolean = isInService() && !isOccupiedNowEffective()
+    fun galleryImageUrls(): List<String> = image.split(',').map { it.trim() }.filter { it.isNotEmpty() }
 }
 ```
 
-- **`isOperational`**: indica si la habitación está en servicio. La API excluye las habitaciones fuera de servicio de las búsquedas de disponibilidad.
-- **`isOccupiedNow`**: campo calculado por la API que indica si hay una reserva activa en este momento.
-- **`isFreeNow()`**: función de utilidad que combina ambos campos para determinar si la habitación está realmente libre.
+- **`isOperational`** / **`isOccupiedNow`**: ahora `Boolean?` con `alternate` en `@SerializedName` para manejar ambas formas de envío de la API (`is_operational` y `isOperational`). `null` se trata como "en servicio".
+- **`isInService()`**: solo excluye si explícitamente `false`.
+- **`galleryImageUrls()`**: separa múltiples URLs por coma para el `HorizontalPager` en `RoomDetail`.
 
 #### Repositorio — `RoomRepository.kt`
 
-Centraliza la obtención de habitaciones con caché en memoria y fallback automático:
+Solo almacena habitaciones en servicio (`isInService()`):
 
 ```kotlin
 object RoomRepository {
-    val rooms: StateFlow<List<Room>>              // Todas las habitaciones
-    val availableRooms: StateFlow<List<Room>>     // Habitaciones disponibles por fechas
+    val rooms: StateFlow<List<Room>>              // Solo habitaciones en servicio
+    val availableRooms: StateFlow<List<Room>>     // Disponibles por fechas (en servicio)
 
-    suspend fun fetchRooms()                      // GET /room/all
-    suspend fun getRoomById(roomId: String): Room? // Busca en caché, recarga si no está
-    suspend fun fetchAvailableRoomsByDates(checkIn: String, checkOut: String) // GET /room/available
+    suspend fun fetchRooms()                      // GET /room/all → filtra isInService()
+    suspend fun getRoomById(roomId: String): Room? // null si fuera de servicio
+    suspend fun fetchAvailableRoomsByDates(...)    // GET /room/available → filtra isInService()
 }
 ```
 
-Si `GET /room/available` falla, el repositorio ejecuta un **fallback** que carga todas las habitaciones con `GET /room/all` y filtra localmente por `isOperational` y `isFreeNow()`.
+#### Vista — `RoomList.kt`
 
-### Historial de auditoría del cliente
+Tarjetas Material 3 con imagen arriba, datos debajo. Las habitaciones fuera de servicio no aparecen en la lista. Chips de filtro: "Ocupadas ahora" muestra solo las habitaciones con reserva activa (no las fuera de servicio).
 
-El usuario puede consultar la actividad de su reserva directamente desde la pantalla de modificación (`ModReserva`). El diseño sigue un principio claro: **no exponer datos técnicos al usuario final**.
+### Reservas y actividad
 
-#### `BookingAuditEntry.kt` — DTO mínimo
+#### `MyBookingsScreens.kt`
 
-Modelo ligero que solo recoge los campos necesarios para la interfaz. Los campos técnicos (`previous_state`, `new_state`, `resumen_cambios`) **no se modelan** intencionadamente:
+Dos pantallas en un mismo archivo:
 
-```kotlin
-data class BookingAuditEntry(
-    val booking_id: String? = null,
-    val action: String? = null,
-    val timestamp: Date? = null,
-)
-```
+- **MyBookingsScreen**: reservas no canceladas, con botón "Historial" para ver todas. Cada fila incluye un botón "Actividad" (auditoría amigable) y "Gestionar reserva" (navega a `ModReserva`).
+- **ReservationHistoryScreen**: lista completa de reservas (incluidas canceladas y pasadas), con acceso a la auditoría de cada una.
 
-#### `BookingHistoryFriendlyMapper.kt` — Mapeo a texto legible
+#### `ReservationAuditScreen.kt` + `ReservationAuditViewModel.kt`
 
-Convierte la acción cruda de la API a un mensaje comprensible para el usuario:
+Pantalla dedicada a la auditoría amigable de una reserva. Utiliza `BookingHistoryFriendlyMapper` para convertir acciones en textos legibles:
 
 ```kotlin
-object BookingHistoryFriendlyMapper {
-    fun toUserMessage(action: String?): String {
-        return when (action?.trim()?.uppercase(Locale.ROOT)) {
-            "CREATED", "CREATE"                            -> "Reserva creada"
-            "PAYMENT_RECEIVED", "PAYMENT", "PAID", "PAGO"  -> "Pago recibido"
-            "CHECK_IN", "CHECKIN", "CHECK_IN_DONE"         -> "Check-in realizado"
-            "EXTRA_SERVICE", "SERVICE_ADDED", "SERVICE_EXTRA" -> "Servicio extra añadido"
-            "UPDATED", "UPDATE"                            -> "Cambios en tu reserva"
-            "CANCELED", "CANCELLED", "CANCEL"              -> "Reserva cancelada"
-            else                                           -> "Actividad en tu reserva"
+class ReservationAuditViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
+    private val reservaId: String = checkNotNull(savedStateHandle["reservationId"])
+
+    private suspend fun cargarHistorial() {
+        val response = RetrofitClient.reservationService.getBookingAudit(reservaId)
+        val items = list.map { entry ->
+            HistorialItemUi(
+                fechaTexto = entry.timestamp?.let { fmt.format(it) } ?: "—",
+                mensaje = BookingHistoryFriendlyMapper.toUserMessage(entry.action)
+            )
         }
     }
 }
 ```
 
-> **Nota:** Actualmente la API registra solo `CREATED`, `UPDATED` y `CANCELED`. Los textos para pagos, check-in y extras están preparados para cuando el backend incorpore esas acciones.
+### Mi cuenta — `MyAccountScreen.kt`
 
-#### `ModReservaViewModel.kt` — Carga del historial
+Pantalla centralizada con acceso a:
 
-Tras cargar los datos de la reserva (`cargarDatos()`), el ViewModel solicita el historial y lo transforma a objetos `HistorialItemUi` listos para Compose:
-
-```kotlin
-fun cargarDatos() {
-    // ... carga campos de la reserva ...
-    viewModelScope.launch { cargarHistorialAuditoria() }
-}
-
-private suspend fun cargarHistorialAuditoria() {
-    _uiState.update { it.copy(historialCargando = true) }
-    val response = RetrofitClient.reservationService.getBookingAudit(reservaId)
-    val list = if (response.isSuccessful) response.body().orEmpty() else emptyList()
-    val items = list.map { entry ->
-        HistorialItemUi(
-            fechaTexto = entry.timestamp?.let { fmt.format(it) } ?: "—",
-            mensaje = BookingHistoryFriendlyMapper.toUserMessage(entry.action)
-        )
-    }
-    _uiState.update { it.copy(historialItems = items, historialCargando = false) }
-}
-```
-
-El estado expuesto al Compose:
-
-```kotlin
-data class ModuiState(
-    // ... campos de la reserva ...
-    val historialItems: List<HistorialItemUi> = emptyList(),
-    val historialCargando: Boolean = false,
-)
-
-data class HistorialItemUi(
-    val fechaTexto: String,   // "12/05/2026 22:30"
-    val mensaje: String,      // "Reserva creada"
-)
-```
-
-#### Vista — `ModReserva.kt`
-
-La pantalla de modificación de reserva muestra un bloque "Tu actividad" con tres estados:
-
-- **Cargando**: indicador de progreso.
-- **Vacío**: mensaje informativo cuando no hay historial.
-- **Lista**: fecha + mensaje en formato legible, dentro de un `verticalScroll`.
+- **Soporte**: mapa, llamada y correo del hotel (vía `HomeViewModel`).
+- **Mis reservas** → navega a `Reservations`.
+- **Perfil** → navega a `User`.
+- **Asistente de reserva** → navega a `Add`.
 
 ### Reseñas
 
-#### `ReviewRepository` — Estado reactivo global
+Accesibles desde **Perfil > Ajustes > Mis reseñas**. La vista `Reviews.kt` muestra una barra superior con botón de retroceso cuando se accede desde el perfil.
 
-```kotlin
-object ReviewRepository {
-    val reviews: StateFlow<List<Review>>       // Reseñas de una habitación
-    val myReviews: StateFlow<List<Review>>     // Reseñas del usuario logueado
+### Detalle de habitación — `RoomDetail.kt`
 
-    suspend fun fetchReviewsByRoom(roomId: String)
-    suspend fun fetchMyReviews()
-    suspend fun createReview(roomId: String, rating: Int, comment: String): Result<String>
-    suspend fun deleteReview(reviewId: String, roomId: String): Result<String>
-}
-```
+- **Galería**: `HorizontalPager` con múltiples imágenes vía `galleryImageUrls()`.
+- **Reseñas**: título actualizado a "Reseñas de otros clientes".
 
-#### `ReviewViewModel` — Reseñas de una habitación
+### Historial de auditoría — `BookingHistoryFriendlyMapper.kt`
 
-Gestiona la lógica de reseñas en el contexto de una habitación específica: verifica que el usuario tenga una reserva previa, detecta si ya existe una reseña propia, y controla el formulario.
+Mapeo de acciones de la API a textos de usuario:
 
-#### `MyReviewsViewModel` — Reseñas globales del usuario
+| Acción API                              | Texto al usuario                |
+|-----------------------------------------|----------------------------------|
+| `CREATED`                               | "Reserva creada"                |
+| `PAYMENT_RECEIVED` / `PAYMENT` / `PAID` | "Pago recibido"                 |
+| `CHECK_IN` / `CHECKIN`                  | "Check-in realizado"            |
+| `EXTRA_SERVICE` / `SERVICE_ADDED`       | "Servicio extra añadido"        |
+| `UPDATED`                               | "Cambios en tu reserva"         |
+| `CANCELED`                              | "Reserva cancelada"             |
+| Otros                                   | "Actividad en tu reserva"       |
 
-ViewModel dedicado a la pestaña de reseñas del usuario. Consume `ReviewRepository.myReviews`:
-
-```kotlin
-class MyReviewsViewModel : ViewModel() {
-    val myReviews = ReviewRepository.myReviews
-    val myReviewsLoading = ReviewRepository.myReviewsLoading
-
-    fun refresh() {
-        viewModelScope.launch { ReviewRepository.fetchMyReviews() }
-    }
-}
-```
-
-### Navegación — `Routes.kt`
-
-```kotlin
-sealed class Routes(val route: String) {
-    object Login : Routes("Login")
-    object Register : Routes("Register")
-    object Home : Routes("Home")
-    object RoomList : Routes("RoomList")
-    object RoomDetail : Routes("RoomDetail/{roomId}") {
-        fun createRoute(roomId: String) = "RoomDetail/$roomId"
-    }
-    object Reviews : Routes("Reviews")
-    object Add : Routes("Add")
-    object ModReserva : Routes("ModReserva")
-    object User : Routes("User")
-    object ForgotPassword : Routes("ForgotPassword")
-}
-```
+> La API actualmente registra solo `CREATED`, `UPDATED` y `CANCELED`. Los demás textos están preparados para futuras acciones del backend.
 
 ---
 
 ## Cambios recientes
 
-### Historial de auditoría en Android
+### Rediseño de navegación y layout
 
-- Nuevos archivos: `BookingAuditEntry.kt` (DTO mínimo), `BookingHistoryFriendlyMapper.kt` (mapeo action → texto usuario).
-- `ReservationService.kt` incorpora `GET reservation/{reservation_id}/audit`.
-- `ModReservaViewModel.kt` carga el historial tras obtener los datos de la reserva, exponiendo `historialItems` y `historialCargando` en el estado UI.
-- `ModReserva.kt` muestra el bloque "Tu actividad" con loading, vacío y lista de eventos.
-- Los textos de pago, check-in y servicios extra están preparados para cuando la API registre esas acciones.
+- **Sin bottom bar**: el scaffold principal ya no incluye barra inferior de navegación.
+- **TopAppBar**: iconos de Reservas (calendario) y Mi Cuenta (persona) en la barra superior.
+- **Pantallas sin scaffold**: `ModReserva`, `ReservationAudit` y `ReservationHistory` se muestran a pantalla completa.
 
-### Cambio de `API_BASE_URL`
+### Home tipo Booking
 
-- La URL base pasó de `http://10.0.2.2:3000/` a `http://10.0.2.2:3011/`, alineada con `PORT=3011` en el `.env` de la API.
-- Es necesario recompilar la app tras este cambio para regenerar `BuildConfig`.
+- `BookingHomeScreen.kt` reemplaza al antiguo `Home.kt` como pantalla principal.
+- `BookingSearchState.kt` comparte criterios de búsqueda entre pantallas sin serializar en la ruta.
+- `SearchResultsScreen.kt` muestra resultados filtrados con chips de ordenación y servicios extra (solo UI).
 
-### Habitaciones — `isOperational` e `isOccupiedNow`
+### Gestión de reservas
 
-- El modelo `Room.kt` incorpora los nuevos campos `isOperational` e `isOccupiedNow`.
-- Se añadió la función `isFreeNow()` que combina ambos campos.
-- `RoomRepository.kt` utiliza estos campos en el filtrado de habitaciones disponibles.
+- `MyBookingsScreens.kt`: reservas activas con botones de auditoría y gestión; historial completo accesible.
+- `ReservationAuditScreen.kt` + `ReservationAuditViewModel.kt`: auditoría amigable independiente.
+- `MyAccountScreen.kt`: punto centralizado de acceso a reservas, perfil y soporte.
+
+### Habitaciones fuera de servicio (filtro cliente)
+
+- `RoomRepository` solo almacena habitaciones con `isInService() == true`.
+- `RoomViewModel` filtra exclusivamente sobre habitaciones en servicio.
+- `RoomList` usa tarjetas Material 3 (imagen arriba). Las habitaciones fuera de servicio no entran en la lista.
+- `Room.kt`: campos `isOperational` / `isOccupiedNow` ahora `Boolean?` con `@SerializedName(alternate = [...])`. Nuevas funciones: `isInService()`, `isOccupiedNowEffective()`, `galleryImageUrls()`.
+
+### Reseñas desde perfil
+
+- Botón "Mis reseñas" en Perfil > Ajustes → pantalla de reseñas con barra de retroceso.
 
 ### Otros cambios previos
 
-- `RoomRepository.kt`: repositorio centralizado con caché y fallback automático.
-- `MyReviewsViewModel.kt`: ViewModel independiente para reseñas del usuario.
-- Correcciones en reseñas: ruta `GET /review/room/:roomId`, `user_name` resuelto por la API, eliminación con `@HTTP(method = "DELETE", hasBody = true)`.
+- `BookingAuditEntry.kt` y `BookingHistoryFriendlyMapper.kt` para historial amigable.
+- `API_BASE_URL` actualizada a `http://10.0.2.2:3011/` (puerto 3011).
 - Verbos HTTP: cancelación con `DELETE`, actualización con `PATCH`.
 
 ---
