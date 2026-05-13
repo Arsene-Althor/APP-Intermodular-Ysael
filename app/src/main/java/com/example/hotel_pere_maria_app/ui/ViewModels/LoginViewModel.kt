@@ -2,13 +2,16 @@ package com.example.hotel_pere_maria_app.ui.ViewModels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.hotel_pere_maria_app.BuildConfig
 import com.example.hotel_pere_maria_app.ui.Models.LoginRequest
 import com.example.hotel_pere_maria_app.ui.Service.RetrofitClient
 import com.example.hotel_pere_maria_app.ui.Service.SessionManager
+import com.google.gson.JsonSyntaxException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 sealed class LoginState {
     object Idle : LoginState()
@@ -43,33 +46,57 @@ class LoginViewModel() : ViewModel() {
             _uiState.update { it.copy(loginStatus = LoginState.Loading) }
 
             try {
-                // Llamamos a la API
                 val response =
                         RetrofitClient.authService.login(
                                 LoginRequest(currentEmail, currentPassword)
                         )
                 if (response.isSuccessful) {
-                    // Si el login es correcto:
                     val loginBody = response.body()
+                    if (loginBody == null || loginBody.token.isBlank()) {
+                        _uiState.update {
+                            it.copy(loginStatus = LoginState.Error("Respuesta vacía o sin token. Revisa la API."))
+                        }
+                        return@launch
+                    }
 
-                    // 1. Guardamos el token y los datos del usuario en la sesión global
-                    SessionManager.userToken = loginBody?.token
-                    SessionManager.userInfo = loginBody?.user
+                    SessionManager.userToken = loginBody.token
+                    SessionManager.userInfo = loginBody.user
                     SessionManager.saveSession()
 
-                    // 2. Actualizamos el estado a Success para que la UI navegue a la siguiente
-                    // pantalla
                     _uiState.update {
-                        it.copy(loginStatus = LoginState.Success(response.body()!!.token))
+                        it.copy(loginStatus = LoginState.Success(loginBody.token))
                     }
                 } else {
-                    _uiState.update { it.copy(loginStatus = LoginState.Error("Error de login")) }
-                    println(response.message())
+                    val errText = response.errorBody()?.string()?.trim().orEmpty()
+                    val hint = if (errText.isNotBlank()) errText else "Código HTTP ${response.code()}"
+                    _uiState.update { it.copy(loginStatus = LoginState.Error("Login incorrecto: $hint")) }
+                }
+            } catch (e: JsonSyntaxException) {
+                _uiState.update {
+                    it.copy(
+                        loginStatus = LoginState.Error(
+                            "JSON inválido (¿misma API?). ${e.message?.take(120)}"
+                        )
+                    )
+                }
+            } catch (e: IOException) {
+                _uiState.update {
+                    it.copy(
+                        loginStatus = LoginState.Error(
+                            "Sin conexión a ${BuildConfig.API_BASE_URL}\n" +
+                                "${e.javaClass.simpleName}: ${e.message}\n" +
+                                "Móvil físico: en local.properties define hotel.api.base.url=http://IP_DE_TU_PC:3011/"
+                        )
+                    )
                 }
             } catch (e: Exception) {
-                // Error de red (sin internet o servidor caído)
-                _uiState.update { it.copy(loginStatus = LoginState.Error("Fallo de red")) }
-                println(e.message)
+                _uiState.update {
+                    it.copy(
+                        loginStatus = LoginState.Error(
+                            "${e.javaClass.simpleName}: ${e.message ?: "error"}"
+                        )
+                    )
+                }
             }
         }
     }

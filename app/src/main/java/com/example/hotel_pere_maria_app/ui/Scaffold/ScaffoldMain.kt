@@ -23,20 +23,19 @@ fun ScaffoldMain(onLogout: () -> Unit = {}) {
     val navBackStackEntry by ScaffoldnavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val rutasNoScaflod = listOf(Routes.ModReserva.route)
-    val mostrarScafold = when {
-        currentRoute == null -> true
-        currentRoute.startsWith(Routes.ModReserva.route) -> false
-        else -> true
-    }
+    val mostrarScafold =
+        when {
+            currentRoute == null -> true
+            currentRoute.startsWith(Routes.ModReserva.route) -> false
+            currentRoute.startsWith("ReservationAudit") -> false
+            currentRoute == Routes.ReservationHistory.route -> false
+            else -> true
+        }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState ) },
-        bottomBar = {
-            if(mostrarScafold){
-                NavigationBarState(ScaffoldnavController) }
-            },
+        bottomBar = {},
         topBar = {
             if(mostrarScafold){
                 TopAppBarState(ScaffoldnavController )}

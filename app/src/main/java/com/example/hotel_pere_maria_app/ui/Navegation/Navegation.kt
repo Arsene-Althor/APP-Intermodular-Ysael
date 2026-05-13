@@ -10,12 +10,17 @@ import androidx.navigation.compose.composable
 import com.example.hotel_pere_maria_app.ui.Scaffold.ScaffoldMain
 import com.example.hotel_pere_maria_app.ui.Views.Add
 import com.example.hotel_pere_maria_app.ui.Views.ForgotPassword
-import com.example.hotel_pere_maria_app.ui.Views.Home
+import com.example.hotel_pere_maria_app.ui.Views.BookingHomeScreen
+import com.example.hotel_pere_maria_app.ui.Views.MyAccountScreen
+import com.example.hotel_pere_maria_app.ui.Views.SearchResultsScreen
 import com.example.hotel_pere_maria_app.ui.Views.Login
 import com.example.hotel_pere_maria_app.ui.Views.ModReserva
 import com.example.hotel_pere_maria_app.ui.Views.Profile
 import com.example.hotel_pere_maria_app.ui.Views.Register
 import com.example.hotel_pere_maria_app.ui.Service.SessionManager
+import com.example.hotel_pere_maria_app.ui.Views.MyBookingsScreen
+import com.example.hotel_pere_maria_app.ui.Views.ReservationAuditScreen
+import com.example.hotel_pere_maria_app.ui.Views.ReservationHistoryScreen
 import com.example.hotel_pere_maria_app.ui.Views.ReviewsScreen
 import com.example.hotel_pere_maria_app.ui.Views.RoomDetail
 import com.example.hotel_pere_maria_app.ui.Views.RoomList
@@ -87,14 +92,30 @@ fun NavigationScaffold(
             modifier = modifier
     ) {
         composable(Routes.Home.route) {
-            Home(
-                    onNavigate = { ruta -> navigationController.navigate(ruta) },
-                    snackbarHostState = snackbarHostState
+            BookingHomeScreen(
+                navController = navigationController,
+                snackbarHostState = snackbarHostState,
+            )
+        }
+        composable(Routes.SearchResults.route) {
+            SearchResultsScreen(navController = navigationController)
+        }
+        composable(Routes.MyAccount.route) {
+            MyAccountScreen(
+                navController = navigationController,
+                snackbarHostState = snackbarHostState,
             )
         }
         composable(Routes.Add.route) { Add(snackbarHostState) }
         composable(Routes.RoomList.route) { RoomList(navController = navigationController) }
-        composable(Routes.Reviews.route) { ReviewsScreen() }
+        composable(Routes.Reservations.route) { MyBookingsScreen(navController = navigationController) }
+        composable(Routes.ReservationHistory.route) {
+            ReservationHistoryScreen(navController = navigationController)
+        }
+        composable(Routes.ReservationAudit.route) { ReservationAuditScreen(navController = navigationController) }
+        composable(Routes.Reviews.route) {
+            ReviewsScreen(onBack = { navigationController.popBackStack() })
+        }
         composable(Routes.RoomDetail.route) { backStackEntry ->
             val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
             RoomDetail(navController = navigationController, roomId = roomId)
@@ -107,6 +128,11 @@ fun NavigationScaffold(
                     onBack = { navigationController.popBackStack() }
             )
         }
-        composable(Routes.User.route) { Profile(onLogout = onLogout) }
+        composable(Routes.User.route) {
+            Profile(
+                onLogout = onLogout,
+                onOpenMyReviews = { navigationController.navigate(Routes.Reviews.route) },
+            )
+        }
     }
 }

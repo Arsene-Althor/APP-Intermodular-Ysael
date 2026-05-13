@@ -9,12 +9,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -39,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hotel_pere_maria_app.R
+import com.example.hotel_pere_maria_app.ui.ViewModels.HistorialItemUi
 import com.example.hotel_pere_maria_app.ui.ViewModels.ModReservaViewModel
 import com.example.hotel_pere_maria_app.ui.ViewModels.ModuiState
 import com.example.ui.theme.AppTheme
@@ -77,6 +82,7 @@ fun ModReserva(snackbarHostState : SnackbarHostState, reservaId: String, onBack:
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp)
                     .background(color = MaterialTheme.colorScheme.surface)
                 ,
@@ -97,6 +103,13 @@ fun ModReserva(snackbarHostState : SnackbarHostState, reservaId: String, onBack:
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+
+                HorizontalDivider(thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.5f))
+
+                HistorialReservaSection(
+                    cargando = state.historialCargando,
+                    items = state.historialItems,
+                )
 
                 HorizontalDivider(thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.5f))
 
@@ -327,6 +340,63 @@ fun SummaryBottomCancel(state: ModuiState, onDismiss: () -> Unit, onConfirm: () 
                 )
             ) {
                 Text("Cancelar ahora")
+            }
+        }
+    }
+}
+
+@Composable
+fun HistorialReservaSection(
+    cargando: Boolean,
+    items: List<HistorialItemUi>,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = "Tu actividad",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        when {
+            cargando -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(28.dp))
+                }
+            }
+            items.isEmpty() -> {
+                Text(
+                    text = "Aquí verás el avance de tu estancia cuando haya actividad.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            else -> {
+                items.forEach { row ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = row.fechaTexto,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(0.32f),
+                        )
+                        Text(
+                            text = row.mensaje,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(0.68f),
+                        )
+                    }
+                }
             }
         }
     }

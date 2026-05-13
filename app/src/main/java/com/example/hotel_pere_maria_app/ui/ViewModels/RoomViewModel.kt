@@ -79,20 +79,20 @@ class RoomViewModel : ViewModel() {
         type: String,
         availability: Boolean?
     ): List<Room> {
-        var filtered = rooms
+        // Cliente: nunca mostrar habitaciones marcadas fuera de servicio (ya filtradas en repo; refuerzo).
+        var filtered = rooms.filter { it.isInService() }
 
-        // Filtrar por tipo
         if (type != "Todos") {
             filtered = filtered.filter { it.type.equals(type, ignoreCase = true) }
         }
 
-        // Filtrar por disponibilidad real: libre ahora + en servicio vs ocupada/fuera de servicio
         availability?.let { wantFree ->
-            filtered = if (wantFree) {
-                filtered.filter { it.isOperational && !it.isOccupiedNow }
-            } else {
-                filtered.filter { !it.isOperational || it.isOccupiedNow }
-            }
+            filtered =
+                if (wantFree) {
+                    filtered.filter { !it.isOccupiedNowEffective() }
+                } else {
+                    filtered.filter { it.isOccupiedNowEffective() }
+                }
         }
 
         return filtered

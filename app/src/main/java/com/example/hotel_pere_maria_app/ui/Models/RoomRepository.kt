@@ -51,7 +51,8 @@ object RoomRepository {
         try {
             val response = RetrofitClient.roomService.getAllRooms()
             if (response.isSuccessful) {
-                _rooms.update { response.body()?.toMutableList() ?: emptyList() }
+                val raw = response.body() ?: emptyList()
+                _rooms.update { raw.filter { it.isInService() } }
                 Log.d("ROOM_REPO", "fetchRooms: ${_rooms.value.size} habitaciones")
             } else {
                 _error.value = "Error al cargar habitaciones: ${response.code()}"
@@ -76,8 +77,8 @@ object RoomRepository {
             val response = RetrofitClient.roomService.getAllRooms()
             if (response.isSuccessful) {
                 val list = response.body() ?: emptyList()
-                _rooms.update { list }
-                list.find { it.room_id == roomId }
+                _rooms.update { list.filter { it.isInService() } }
+                list.find { it.room_id == roomId && it.isInService() }
             } else {
                 Log.e("ROOM_REPO", "getRoomById fallback error ${response.code()}")
                 null
@@ -102,7 +103,7 @@ object RoomRepository {
                 .getAvailableRoomsByDates(checkInISO, checkOutISO)
 
             if (response.isSuccessful) {
-                val list = response.body() ?: emptyList()
+                val list = (response.body() ?: emptyList()).filter { it.isInService() }
                 _availableRooms.update { list }
                 Log.d("ROOM_REPO", "fetchAvailable OK: ${list.size} habitaciones")
             } else {
@@ -122,7 +123,7 @@ object RoomRepository {
         try {
             val response = RetrofitClient.roomService.getAllRooms()
             if (response.isSuccessful) {
-                val list = (response.body() ?: emptyList()).filter { it.isOperational && it.isFreeNow() }
+                val list = (response.body() ?: emptyList()).filter { it.isInService() && it.isFreeNow() }
                 _availableRooms.update { list }
                 Log.d("ROOM_REPO", "fallback OK: ${list.size} candidatas")
             } else {

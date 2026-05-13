@@ -3,9 +3,9 @@ package com.example.hotel_pere_maria_app.ui.Scaffold
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -76,8 +76,8 @@ fun NavigationBarState(navController: NavHostController) {
                         Navitems("ADD", Icons.Default.Add, Routes.Add.route),
                         Navitems("Home", Icons.Default.Home, Routes.Home.route),
                         Navitems("Rooms", Icons.Default.Favorite, Routes.RoomList.route),
-                        Navitems("Reseñas", Icons.Default.Star, Routes.Reviews.route),
-                        Navitems("Profile", Icons.Default.AccountCircle, Routes.User.route)
+                        Navitems("Reservas", Icons.Default.Event, Routes.Reservations.route),
+                        Navitems("Perfil", Icons.Default.AccountCircle, Routes.User.route)
                 )
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route ?: items[1].route

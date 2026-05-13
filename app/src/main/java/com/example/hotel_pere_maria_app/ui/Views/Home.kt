@@ -6,7 +6,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -26,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hotel_pere_maria_app.ui.Models.Reservation
+import com.example.hotel_pere_maria_app.ui.Navegation.Routes
 import com.example.hotel_pere_maria_app.ui.ViewModels.HomeUiEvent
 import com.example.hotel_pere_maria_app.ui.ViewModels.HomeViewModel
 import kotlinx.coroutines.flow.StateFlow
@@ -114,36 +114,32 @@ fun Home(onNavigate: (String) -> Unit, snackbarHostState : SnackbarHostState) {
             modifier = Modifier.weight(1f).fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item{
-                Text(text = "Proxima estancia", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                if(reservaReciente != null){
+            item {
+                Text(
+                    text = "Próxima estancia",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                if (reservaReciente != null) {
                     proximaEstancia(reservaReciente!!)
-                }else{
+                } else {
                     SinproxEstancia()
                 }
-                Text(text = "Todas tus estancias", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
-
-            if(reservas.isEmpty()){
-                item {
-                    Box(modifier = Modifier.fillParentMaxHeight(0.7f),
-                        contentAlignment = Alignment.Center
-                        ){
-                        Text(
-                            text = "¿A qué esperas para tu primera reserva?",
-                            modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
+                Spacer(modifier = Modifier.height(8.dp))
+                if (reservas.isEmpty()) {
+                    Text(
+                        text = "Aún no tienes reservas. Explora habitaciones en la pestaña inferior.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
-            }else{
-
-                items(reservas){ reserva ->
-                    CardReserva(reserva, {homeviewModel.onEditarReservaClick(reserva.reservation_id, reserva)})
+                Spacer(modifier = Modifier.height(12.dp))
+                FilledTonalButton(
+                    onClick = { onNavigate(Routes.Reservations.route) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Ver mis reservas e historial de actividad")
                 }
-
             }
         }
 
@@ -216,78 +212,9 @@ fun SinproxEstancia(){
             )
             Spacer(Modifier.width(12.dp))
             Text(
-                text = "No tienes reservas próximas. ¿A que esperas?",
+                text = "No tienes reservas próximas. ¿A qué esperas?",
                 style = MaterialTheme.typography.bodyMedium
             )
-        }
-    }
-}
-
-@Composable
-fun CardReserva(reserva: Reservation, onEditarReserva: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
-        ),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = reserva.reservation_id,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton (onClick = {onEditarReserva()},modifier = Modifier.size(14.dp)){
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Editar reserva",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = reserva.room_id,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.DateRange,
-                    contentDescription = null,
-                    modifier = Modifier.size(12.dp)
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = "${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(reserva.check_in)}" +
-                            " - " +
-                            "${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(reserva.check_out)}",
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
-            if(reserva.cancelation_date != null){
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Fecha cancel: ${SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(reserva.cancelation_date)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-
         }
     }
 }

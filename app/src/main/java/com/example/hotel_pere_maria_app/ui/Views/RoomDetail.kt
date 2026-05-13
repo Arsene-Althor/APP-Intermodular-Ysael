@@ -1,6 +1,9 @@
 package com.example.hotel_pere_maria_app.ui.Views
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -32,7 +35,7 @@ import com.example.hotel_pere_maria_app.ui.ViewModels.RoomViewModel
  * Pantalla de detalles de una habitación específica. Incluye información de la habitación y sección
  * de reseñas.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun RoomDetail(
         navController: NavController,
@@ -117,15 +120,27 @@ fun RoomDetail(
                             .verticalScroll(rememberScrollState())
                     ) {
 
-                        // Imagen principal
-                        AsyncImage(
-                            model = room.image,
-                            contentDescription = "Imagen de ${room.type}",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(300.dp),
-                            contentScale = ContentScale.Crop
-                        )
+                        // Galería (varias URLs separadas por coma en API)
+                        val urls = room.galleryImageUrls().filter { it.isNotBlank() }
+                        if (urls.isEmpty()) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().height(300.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                            ) {}
+                        } else {
+                            val pagerState = rememberPagerState(pageCount = { urls.size })
+                            HorizontalPager(
+                                state = pagerState,
+                                modifier = Modifier.fillMaxWidth().height(300.dp),
+                            ) { page ->
+                                AsyncImage(
+                                    model = urls[page],
+                                    contentDescription = "Imagen ${page + 1} de ${room.type}",
+                                    modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+                                    contentScale = ContentScale.Crop,
+                                )
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(24.dp))
 
@@ -229,7 +244,7 @@ fun RoomDetail(
 
                         // Lista de reseñas existentes
                         Text(
-                            text = "Otras reseñas",
+                            text = "Reseñas de otros clientes",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )

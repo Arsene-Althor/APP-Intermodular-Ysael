@@ -9,6 +9,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -27,58 +35,83 @@ import com.example.hotel_pere_maria_app.ui.ViewModels.MyReviewsViewModel
  * Reseñas que el usuario logueado ha publicado (GET /review/mine). Para crear reseñas nuevas sigue
  * entrando en el detalle de la habitación (Rooms).
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReviewsScreen(vm: MyReviewsViewModel = viewModel()) {
+fun ReviewsScreen(onBack: (() -> Unit)? = null, vm: MyReviewsViewModel = viewModel()) {
     val lista by vm.myReviews.collectAsState()
     val cargando by vm.myReviewsLoading.collectAsState()
     val error by vm.myReviewsError.collectAsState()
 
-    Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-                text = "Mis reseñas",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-        )
-        Text(
-                text = "Aquí aparecen las valoraciones que has dejado. Puedes añadir más desde «Rooms» → detalle de habitación.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Button(onClick = { vm.refresh() }, modifier = Modifier.fillMaxWidth()) {
-            Text("Actualizar lista")
-        }
-
-        when {
-            cargando && lista.isEmpty() -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-            }
-            error != null -> {
-                Text(text = error ?: "", color = MaterialTheme.colorScheme.error)
-            }
-            lista.isEmpty() -> {
+    Scaffold(
+            topBar = {
+                if (onBack != null) {
+                    TopAppBar(
+                            title = { Text("Mis reseñas") },
+                            navigationIcon = {
+                                IconButton(onClick = onBack) {
+                                    Icon(
+                                            Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = "Volver",
+                                    )
+                                }
+                            },
+                            colors =
+                                    TopAppBarDefaults.topAppBarColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                            titleContentColor = MaterialTheme.colorScheme.onSurface,
+                                    ),
+                    )
+                }
+            },
+    ) { padding ->
+        Column(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            if (onBack == null) {
                 Text(
-                        text = "Aún no has publicado ninguna reseña.",
-                        style = MaterialTheme.typography.bodyLarge
+                        text = "Mis reseñas",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
                 )
             }
-            else -> {
-                LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.fillMaxSize()
-                ) {
-                    items(lista, key = { it.review_id }) { review ->
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Text(
-                                    text = "Habitación: ${review.room_id}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            ReviewItem(review)
+            Text(
+                    text =
+                            "Valoraciones que has publicado. Para valorar una estancia, abre el detalle de una habitación en «Rooms».",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Button(onClick = { vm.refresh() }, modifier = Modifier.fillMaxWidth()) { Text("Actualizar lista") }
+
+            when {
+                cargando && lista.isEmpty() -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                }
+                error != null -> {
+                    Text(text = error ?: "", color = MaterialTheme.colorScheme.error)
+                }
+                lista.isEmpty() -> {
+                    Text(
+                            text = "Aún no has publicado ninguna reseña.",
+                            style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+                else -> {
+                    LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(lista, key = { it.review_id }) { review ->
+                            Column(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                        text = "Habitación: ${review.room_id}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                ReviewItem(review)
+                            }
                         }
                     }
                 }

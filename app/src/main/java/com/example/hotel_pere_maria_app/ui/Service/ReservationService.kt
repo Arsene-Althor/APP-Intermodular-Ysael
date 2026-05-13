@@ -1,5 +1,6 @@
 package com.example.hotel_pere_maria_app.ui.Service
 
+import com.example.hotel_pere_maria_app.ui.Models.BookingAuditEntry
 import com.example.hotel_pere_maria_app.ui.Models.Reservation
 import retrofit2.Response
 import retrofit2.http.Body
@@ -13,6 +14,12 @@ import retrofit2.http.Query
 interface ReservationService{
     @GET("reservation/mine")
     suspend fun getMine(): Response<List<Reservation>>
+
+    /** Historial de auditoría (solo lectura). El cliente usa [BookingHistoryFriendlyMapper] para el texto. */
+    @GET("reservation/{reservation_id}/audit")
+    suspend fun getBookingAudit(
+        @Path("reservation_id") reservationId: String,
+    ): Response<List<BookingAuditEntry>>
 
     @POST("reservation/getPrice")
     suspend fun getPrice(@Body datos : Map<String, String>): Response<Map<String,Double>>

@@ -55,7 +55,7 @@ import com.example.hotel_pere_maria_app.ui.ViewModels.ProfileState
 import com.example.hotel_pere_maria_app.ui.ViewModels.ProfileViewModel
 
 @Composable
-fun Profile(onLogout: () -> Unit, viewModel: ProfileViewModel = viewModel()) {
+fun Profile(onLogout: () -> Unit, onOpenMyReviews: () -> Unit = {}, viewModel: ProfileViewModel = viewModel()) {
         val uiState by viewModel.uiState.collectAsState()
         val context = LocalContext.current
 
@@ -424,6 +424,20 @@ fun Profile(onLogout: () -> Unit, viewModel: ProfileViewModel = viewModel()) {
                         fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(
+                        onClick = onOpenMyReviews,
+                        modifier = Modifier.fillMaxWidth(),
+                ) {
+                        Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("Mis reseñas")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Tema claro/oscuro
                 Row(

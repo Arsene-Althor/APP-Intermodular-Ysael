@@ -5,7 +5,7 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.hotel_pere_maria_app.ui.Models.Reservation
+import com.example.hotel_pere_maria_app.ui.Models.BookingHistoryFriendlyMapper
 import com.example.hotel_pere_maria_app.ui.Models.ReservationRepository
 import com.example.hotel_pere_maria_app.ui.Service.RetrofitClient
 import com.example.hotel_pere_maria_app.ui.Service.SessionManager
@@ -210,6 +210,24 @@ class ModReservaViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
             check_in = item.check_in
             check_out = item.check_out
         }
+        viewModelScope.launch { cargarHistorialAuditoria() }
+    }
+
+    private suspend fun cargarHistorialAuditoria() {
+        _uiState.update { it.copy(historialCargando = true) }
+        try {
+            val response = RetrofitClient.reservationService.getBookingAudit(reservaId)
+            val list = if (response.isSuccessful) response.body().orEmpty() else emptyList()
+            val fmt = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.forLanguageTag("es-ES"))
+            val items = list.map { entry ->
+                val fechaTexto = entry.timestamp?.let { fmt.format(it) } ?: "—"
+                val mensaje = BookingHistoryFriendlyMapper.toUserMessage(entry.action)
+                HistorialItemUi(fechaTexto = fechaTexto, mensaje = mensaje)
+            }
+            _uiState.update { it.copy(historialItems = items, historialCargando = false) }
+        } catch (_: Exception) {
+            _uiState.update { it.copy(historialItems = emptyList(), historialCargando = false) }
+        }
     }
     fun limpiarMensaje(){
         _uiState.update { it.copy(mensajeRespuesta = null, errorRespusta = false) }
@@ -227,5 +245,13 @@ data class ModuiState(
     val showResumenCancel: Boolean = false,
     val mensajeRespuesta:String? = null,
     val errorRespusta: Boolean = false,
-    val precioCancel: Double = 0.00
+    val precioCancel: Double = 0.00,
+    val historialItems: List<HistorialItemUi> = emptyList(),
+    val historialCargando: Boolean = false,
+)
+
+/** Una línea del historial ya formateada para UI (sin action crudo). */
+data class HistorialItemUi(
+    val fechaTexto: String,
+    val mensaje: String,
 )

@@ -4,6 +4,33 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+/** Base URL API: `local.properties` → `hotel.api.base.url` (ej. móvil físico). Si no existe: emulador → host. */
+val hotelApiBaseUrl: String = run {
+    val f = rootProject.file("local.properties")
+    val fromFile =
+        if (f.exists()) {
+            f.readLines()
+                .map { it.trim() }
+                .firstOrNull { line ->
+                    line.startsWith("hotel.api.base.url=") &&
+                        !line.startsWith("#")
+                }
+                ?.substringAfter("=", "")
+                ?.trim()
+                .orEmpty()
+        } else {
+            ""
+        }
+    val raw = if (fromFile.isNotBlank()) fromFile else "http://10.0.2.2:3011/"
+    if (raw.endsWith("/")) raw else "$raw/"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
+}
+
 android {
     namespace = "com.example.hotel_pere_maria_app"
     compileSdk = 36
@@ -17,8 +44,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Emulador Android → API en el PC: 10.0.2.2. Dispositivo físico: IP LAN de tu máquina (ej. http://192.168.1.x:3000/)
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/\"")
+        // Sobrescribir en local.properties: hotel.api.base.url=http://192.168.x.x:3011/
+        buildConfigField("String", "API_BASE_URL", "\"$hotelApiBaseUrl\"")
     }
 
     buildTypes {
@@ -33,9 +60,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
     }
     buildFeatures {
         compose = true

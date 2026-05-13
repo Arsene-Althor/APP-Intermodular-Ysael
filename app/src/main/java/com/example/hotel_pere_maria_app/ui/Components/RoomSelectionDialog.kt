@@ -68,7 +68,7 @@ fun RoomSelectionDialog(
 
     // Lista final: si hay fechas el repositorio ya filtra/hace fallback por disponibilidad
     val displayRooms = if (hasDates) availableByDates else {
-        if (showOnlyAvailable) allRooms.filter { it.isOperational && it.isFreeNow() } else allRooms
+        if (showOnlyAvailable) allRooms.filter { it.isInService() && it.isFreeNow() } else allRooms
     }
 
 
