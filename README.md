@@ -13,8 +13,9 @@ Cliente móvil para huéspedes del **Hotel Pere María**, desarrollado con **Kot
 - [Arquitectura](#arquitectura)
 - [Navegación](#navegación)
 - [Conexión con la API](#conexión-con-la-api)
+- [Ejemplos de código](#ejemplos-de-código)
 - [Flujos principales](#flujos-principales)
-- [Cambios recientes](#cambios-recientes)
+- [Evolución del proyecto](#evolución-del-proyecto-desde-la-creación)
 
 ---
 
@@ -142,11 +143,36 @@ El **scaffold** (barra superior) se oculta en algunas pantallas a pantalla compl
 
 ## Conexión con la API
 
-`RetrofitClient` añade `Authorization: Bearer <token>` cuando hay sesión.
+`RetrofitClient` centraliza la base URL (`BuildConfig.API_BASE_URL`) y añade el token en cada petición autenticada:
+
+```kotlin
+private val authInterceptor = Interceptor { chain ->
+    val request = chain.request().newBuilder()
+    SessionManager.userToken?.let {
+        request.addHeader("Authorization", "Bearer $it")
+    }
+    chain.proceed(request.build())
+}
+```
 
 ### Habitaciones (`RoomService.kt`)
 
-Parámetros de disponibilidad alineados con la API (**camelCase**): `checkIn`, `checkOut`, `guests`. El **repositorio** convierte las fechas de la UI a **ISO (`YYYY-MM-DD`)** antes de la petición.
+Parámetros **camelCase** (`checkIn`, `checkOut`, `guests`) como espera la API. El repositorio normaliza fechas a **ISO** antes de llamar (tanto si el usuario escribió `dd/MM/yyyy` como si ya viene `yyyy-MM-dd`):
+
+```kotlin
+private fun toISO(date: String): String {
+    val t = date.trim()
+    if (t.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) return t
+    return try {
+        val inp = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val out = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val parsed: Date? = inp.parse(t)
+        if (parsed != null) out.format(parsed) else t
+    } catch (e: Exception) {
+        t
+    }
+}
+```
 
 ```kotlin
 @GET("room/available")
@@ -158,6 +184,107 @@ suspend fun getAvailableRoomsByDates(
 
 @GET("room/extra-services")
 suspend fun listExtraServices(): Response<List<ExtraService>>
+```
+
+Si `room/available` devuelve error HTTP, el repositorio guarda el cuerpo en `availableError` para mostrarlo en la UI (no solo un fallo silencioso).
+
+---
+
+## Ejemplos de código
+
+### Rutas de navegación (`Routes.kt`)
+
+El grafo actual gira en torno al flujo **booking** y pantallas de cuenta / reservas:
+
+```kotlin
+sealed class Routes(val route: String) {
+    object BookingHome : Routes("booking/home")
+    object BookingResults : Routes("booking/results")
+    object BookingConfirm : Routes("booking/confirm/{roomId}") {
+        fun createRoute(roomId: String) = "booking/confirm/$roomId"
+    }
+    object Reservations : Routes("Reservations")
+    object ReservationHistory : Routes("ReservationHistory")
+    object ReservationAudit : Routes("ReservationAudit/{reservationId}") {
+        fun createRoute(reservationId: String) = "ReservationAudit/$reservationId"
+    }
+    object RoomDetail : Routes("RoomDetail/{roomId}") {
+        fun createRoute(roomId: String) = "RoomDetail/$roomId"
+    }
+    // … Login, Register, Reviews, User, ModReserva, …
+}
+```
+
+### Sesión de búsqueda (`BookingSearchSession.kt`)
+
+Estado en memoria (no persistido) compartido entre **inicio**, **resultados** y **confirmación**: fechas en millis, huéspedes, rango de precio y helpers `checkInIso()` / `checkOutIso()` para la API.
+
+```kotlin
+object BookingSearchSession {
+    var checkInMillis: Long? by mutableStateOf(null)
+    var checkOutMillis: Long? by mutableStateOf(null)
+    var guests: Int by mutableIntStateOf(2)
+    var priceMin: Double by mutableDoubleStateOf(20.0)
+    var priceMax: Double by mutableDoubleStateOf(250.0)
+
+    private val isoFmt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+    fun checkInIso(): String? = checkInMillis?.let { isoFmt.format(Date(it)) }
+    fun checkOutIso(): String? = checkOutMillis?.let { isoFmt.format(Date(it)) }
+
+    fun isComplete(): Boolean {
+        val ci = checkInMillis ?: return false
+        val co = checkOutMillis ?: return false
+        return co > ci
+    }
+}
+```
+
+### Modelo `Room` — precio mostrado y galería (`Room.kt`)
+
+La API puede enviar `effective_price_per_night` y listas `images` / `extra_services`. El cliente unifica lo que ve el usuario:
+
+```kotlin
+data class Room(
+    val room_id: String,
+    val image: String,
+    val price_per_night: Double,
+    @SerializedName("images") val images: List<String> = emptyList(),
+    @SerializedName("extra_services") val extraServices: List<String> = emptyList(),
+    @SerializedName("offer_active") val offerActive: Boolean = false,
+    @SerializedName("offer_percent") val offerPercent: Double = 0.0,
+    @SerializedName("effective_price_per_night") val effectivePricePerNight: Double? = null,
+    // … is_operational, is_occupied_now, …
+) {
+    fun displayPricePerNight(): Double = effectivePricePerNight ?: price_per_night
+
+    fun galleryImageUrls(): List<String> {
+        val fromList = images.map { it.trim() }.filter { it.isNotEmpty() }
+        if (fromList.isNotEmpty()) return fromList
+        return image.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    }
+}
+```
+
+### Carrusel en detalle (`RoomDetail.kt`)
+
+`HorizontalPager` + indicadores circulares + texto de ayuda; las URLs salen de `galleryImageUrls()`:
+
+```kotlin
+val urls = room.galleryImageUrls().filter { it.isNotBlank() }
+val pagerState = rememberPagerState(pageCount = { urls.size })
+HorizontalPager(
+    state = pagerState,
+    modifier = Modifier.fillMaxWidth().height(280.dp),
+    beyondViewportPageCount = 1,
+) { page ->
+    AsyncImage(
+        model = urls[page],
+        contentDescription = "Imagen ${page + 1} de ${urls.size}",
+        modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+        contentScale = ContentScale.Crop,
+    )
+}
 ```
 
 ---
@@ -172,28 +299,49 @@ suspend fun listExtraServices(): Response<List<ExtraService>>
 
 ---
 
-## Cambios recientes
+## Evolución del proyecto (desde la creación)
 
-### Estética y navegación
+Orden aproximado de **novedades** que se fueron incorporando; cada bloque explica el *porqué* y enlaza con el código de arriba cuando aplica.
 
-- Interfaz **blanca + acentos azul pastel** (Material 3); tipografía y espaciado tipo app de reservas.
-- **Eliminación de la barra de navegación inferior**; accesos principales en **TopAppBar** (logo más visible, inicio, reservas, cuenta).
-- Flujo de búsqueda **unificado** en el paquete `ui/booking/`; retirada del flujo antiguo de “añadir reserva” manual y del listado tipo catálogo con bottom bar.
+### 1. Base de la app cliente
 
-### Funcionalidad alineada con la API
+- **Login / registro / recuperación** contra la API; **sesión JWT** persistida (`SessionManager` + `SharedPreferences`) para no pedir credenciales en cada arranque.
+- **Retrofit** por módulos (`AuthService`, `ReservationService`, `RoomService`, `ReviewService`) y patrón **MVVM** con pantallas Compose.
 
-- Búsqueda de disponibilidad con **query correcta** (`checkIn` / `checkOut` / `guests`) y **normalización de fechas** (`toISO` acepta `YYYY-MM-DD`).
-- Modelo `Room` con: `images`, `extra_services`, ofertas (`offer_*`), `effective_price_per_night`, y `displayPricePerNight()` para listados y filtros.
-- **Filtros de servicios extra** conectados al catálogo `GET /room/extra-services`.
-- **Errores de disponibilidad** más visibles en UI cuando la API responde con error antes del fallback.
+### 2. Reservas y reseñas en el móvil
 
-### Detalle y soporte
+- Listado y gestión de **mis reservas**; creación y modificación alineadas con los endpoints de la API.
+- **Reseñas** por habitación y listado “mis reseñas” desde perfil.
 
-- **Carrusel** de galería con indicadores e instrucción de gesto horizontal.
-- **Perfil**: bloque “Más información (soporte)” (mapa, llamada, correo).
+### 3. Habitaciones fuera de servicio y datos enriquecidos
 
-### Archivos retirados del flujo activo (referencia)
+- La API empezó a enviar `is_operational` / `is_occupied_now`; el **repositorio** filtra habitaciones no operativas para no ofrecerlas al huésped.
+- Más tarde llegaron **galería**, **ofertas** y **servicios extra** en el JSON: el modelo `Room` con `SerializedName` y funciones `displayPricePerNight()` / `galleryImageUrls()` concentran la lógica de presentación.
 
-Se eliminaron del proyecto piezas ya sustituidas (por ejemplo formulario `Add`, listado `RoomList` clásico, diálogo de selección de habitación duplicado, barra inferior). El archivo `Home.kt` puede permanecer en el árbol pero **no** forma parte del `NavHost` actual.
+### 4. Flujo tipo Booking (búsqueda → resultados → confirmar)
+
+- Sustituye el flujo antiguo de “elegir habitación en diálogo / formulario aislado” por un **túnel claro**: `BookingHomeScreen` → `BookingResultsScreen` → `RoomDetail` → `BookingConfirmScreen`.
+- **`BookingSearchSession`**: fechas, huéspedes y rango de precio compartidos entre pantallas sin serializar todo en la ruta de navegación.
+- **`BookingResultsScreen`**: consume `GET /room/available` con fechas ISO; ordenación por valoración; filtro de precio sobre `displayPricePerNight()`; **chips de servicios extra** alimentados por `GET /room/extra-services` (la habitación debe cumplir todos los IDs seleccionados).
+
+### 5. Carrusel de fotos y precio con oferta en detalle
+
+- **`RoomDetail`**: `HorizontalPager` + **indicadores** + texto “desliza…”; imágenes desde `galleryImageUrls()` (soporta tanto `images[]` como `image` con comas legacy).
+- Bloque de precio que muestra **tachado** el precio base y el **efectivo** cuando `offerActive` y `offer_percent` > 0.
+
+### 6. Historial de reservas y auditoría “humana”
+
+- **Reservas activas** y acceso a **historial completo** (incluye canceladas y pasadas).
+- Pantalla **`ReservationAudit`**: lista de eventos de `GET /reservation/{id}/audit` con textos amigables vía `BookingHistoryFriendlyMapper` (mapea `CREATED`, `UPDATED`, `CANCELED`, y deja preparadas etiquetas para futuras acciones del backend).
+
+### 7. Estética y navegación tipo app de viajes
+
+- **Material 3** con fondo claro y acento azul pastel (`ui/theme/`).
+- **Sin bottom navigation bar**: la **TopAppBar** concentra inicio, reservas y perfil; menos ruido visual y foco en buscar y reservar.
+- **Soporte** (mapa, teléfono, correo) agrupado en **Perfil** en lugar de disperso en un home legacy.
+
+### 8. Limpieza del árbol de código
+
+- Eliminación de flujos sustituidos (p. ej. formulario `Add` antiguo, listado `RoomList` como entrada principal, barra inferior duplicada). `Home.kt` puede existir como referencia pero **no** es el destino del `NavHost` actual.
 
 ---
