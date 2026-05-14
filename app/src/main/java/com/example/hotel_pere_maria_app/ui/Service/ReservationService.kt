@@ -1,7 +1,9 @@
 package com.example.hotel_pere_maria_app.ui.Service
 
 import com.example.hotel_pere_maria_app.ui.Models.BookingAuditEntry
+import com.example.hotel_pere_maria_app.ui.Models.InvoicesByUserResponse
 import com.example.hotel_pere_maria_app.ui.Models.Reservation
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -10,6 +12,7 @@ import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.Streaming
 
 interface ReservationService{
     @GET("reservation/mine")
@@ -38,4 +41,17 @@ interface ReservationService{
 
     @PATCH("reservation/update")
     suspend fun updateReservation(@Body datos : Map<String, String>): Response<Map<String, Any>>
+
+    /** PDF factura (binario). Cliente: solo su reserva. */
+    @Streaming
+    @GET("reservation/{reservation_id}/invoice")
+    suspend fun downloadInvoicePdf(
+        @Path("reservation_id") reservationId: String,
+    ): Response<ResponseBody>
+
+    /** Listado de reservas con factura emitida para un usuario. */
+    @GET("invoices")
+    suspend fun getInvoicesByUser(
+        @Query("userId") userId: String,
+    ): Response<InvoicesByUserResponse>
 }

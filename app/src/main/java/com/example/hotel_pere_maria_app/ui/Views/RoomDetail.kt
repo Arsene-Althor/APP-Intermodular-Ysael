@@ -10,7 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
@@ -27,9 +27,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.hotel_pere_maria_app.ui.Models.Review
-import com.example.hotel_pere_maria_app.ui.Service.SessionManager
+import com.example.hotel_pere_maria_app.ui.Navegation.Routes
 import com.example.hotel_pere_maria_app.ui.ViewModels.ReviewViewModel
 import com.example.hotel_pere_maria_app.ui.ViewModels.RoomViewModel
+import com.example.hotel_pere_maria_app.ui.booking.BookingSearchSession
 
 /**
  * Pantalla de detalles de una habitación específica. Incluye información de la habitación y sección
@@ -60,16 +61,16 @@ fun RoomDetail(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
                         )
                     }
                 },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor =
-                            MaterialTheme.colorScheme.onPrimaryContainer
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.primary,
                     )
             )
         },
@@ -129,22 +130,50 @@ fun RoomDetail(
                             ) {}
                         } else {
                             val pagerState = rememberPagerState(pageCount = { urls.size })
-                            HorizontalPager(
-                                state = pagerState,
-                                modifier = Modifier.fillMaxWidth().height(300.dp),
-                            ) { page ->
-                                AsyncImage(
-                                    model = urls[page],
-                                    contentDescription = "Imagen ${page + 1} de ${room.type}",
-                                    modifier = Modifier.fillMaxWidth().fillMaxHeight(),
-                                    contentScale = ContentScale.Crop,
+                            Column(Modifier.fillMaxWidth()) {
+                                HorizontalPager(
+                                    state = pagerState,
+                                    modifier = Modifier.fillMaxWidth().height(280.dp),
+                                    beyondViewportPageCount = 1,
+                                ) { page ->
+                                    AsyncImage(
+                                        model = urls[page],
+                                        contentDescription = "Imagen ${page + 1} de ${urls.size}",
+                                        modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                }
+                                Row(
+                                    Modifier.fillMaxWidth().padding(top = 8.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    repeat(urls.size) { i ->
+                                        val active = pagerState.currentPage == i
+                                        Surface(
+                                            modifier =
+                                                Modifier
+                                                    .padding(horizontal = 4.dp)
+                                                    .size(if (active) 10.dp else 7.dp),
+                                            shape = CircleShape,
+                                            color =
+                                                if (active) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.outlineVariant,
+                                        ) {}
+                                    }
+                                }
+                                Text(
+                                    "Desliza izquierda/derecha para cambiar de foto",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                                 )
                             }
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // Precio destacado
+                        // Precio destacado (oferta si aplica)
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
@@ -158,16 +187,34 @@ fun RoomDetail(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "Precio por noche:",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    text = "€${room.price_per_night}",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                Column {
+                                    Text(
+                                        text = "Precio por noche",
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                    if (room.offerActive && room.offerPercent > 0) {
+                                        Text(
+                                            text = "Oferta ${room.offerPercent.toInt()}% sobre tarifa base",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    if (room.offerActive && room.offerPercent > 0) {
+                                        Text(
+                                            text = "€${room.price_per_night}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    Text(
+                                        text = "€${room.displayPricePerNight()}",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             }
                         }
 
@@ -266,6 +313,18 @@ fun RoomDetail(
                             reviews.forEach { review ->
                                 ReviewItem(review)
                                 Spacer(modifier = Modifier.height(12.dp))
+                            }
+                        }
+
+                        if (BookingSearchSession.isComplete()) {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Button(
+                                onClick = {
+                                    navController.navigate(Routes.BookingConfirm.createRoute(room.room_id))
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text("Reservar con estas fechas", fontWeight = FontWeight.SemiBold)
                             }
                         }
 

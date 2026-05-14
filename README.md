@@ -204,6 +204,7 @@ sealed class Routes(val route: String) {
         fun createRoute(roomId: String) = "booking/confirm/$roomId"
     }
     object Reservations : Routes("Reservations")
+    object InvoiceHistory : Routes("InvoiceHistory")
     object ReservationHistory : Routes("ReservationHistory")
     object ReservationAudit : Routes("ReservationAudit/{reservationId}") {
         fun createRoute(reservationId: String) = "ReservationAudit/$reservationId"
@@ -340,7 +341,15 @@ Orden aproximado de **novedades** que se fueron incorporando; cada bloque explic
 - **Sin bottom navigation bar**: la **TopAppBar** concentra inicio, reservas y perfil; menos ruido visual y foco en buscar y reservar.
 - **Soporte** (mapa, teléfono, correo) agrupado en **Perfil** en lugar de disperso en un home legacy.
 
-### 8. Limpieza del árbol de código
+### 8. Factura PDF (P5 cliente)
+
+- **`Reservation`**: campos opcionales `invoice_number`, `checkout_completed_at` (JSON de `GET /reservation/mine` y listados de factura).
+- **`ReservationService`**: `GET reservation/{id}/invoice` (PDF binario, `@Streaming`) y `GET /invoices?userId=` → `InvoicesByUserResponse`.
+- **`InvoicePdfHelper`**: descarga a `cacheDir/invoices/`, **`FileProvider`** (`${applicationId}.fileprovider`) y `Intent.ACTION_VIEW` para abrir el PDF.
+- **Mis reservas**: botón **Descargar factura (PDF)** si `invoice_number` no es null; acceso **Mis facturas** en la barra superior.
+- **`InvoiceHistoryScreen`**: lista facturas del usuario (fecha de emisión preferente `checkout_completed_at`, total, **Ver PDF**).
+
+### 9. Limpieza del árbol de código
 
 - Eliminación de flujos sustituidos (p. ej. formulario `Add` antiguo, listado `RoomList` como entrada principal, barra inferior duplicada). `Home.kt` puede existir como referencia pero **no** es el destino del `NavHost` actual.
 

@@ -11,7 +11,7 @@ import java.util.Locale
 
 /**
  * Repositorio para gestionar las habitaciones.
- * _rooms     → todas las habitaciones (para RoomList).
+ * _rooms     → todas las habitaciones (catálogo / detalle).
  * _availableRooms → habitaciones filtradas por fechas (para el diálogo de reserva).
  */
 object RoomRepository {
@@ -35,13 +35,15 @@ object RoomRepository {
     val availableError: StateFlow<String?> = _availableError
 
     private fun toISO(date: String): String {
+        val t = date.trim()
+        if (t.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) return t
         return try {
             val inp = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             val out = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val parsed: Date? = inp.parse(date)
-            if (parsed != null) out.format(parsed) else date
+            val parsed: Date? = inp.parse(t)
+            if (parsed != null) out.format(parsed) else t
         } catch (e: Exception) {
-            date
+            t
         }
     }
 
@@ -52,7 +54,7 @@ object RoomRepository {
             val response = RetrofitClient.roomService.getAllRooms()
             if (response.isSuccessful) {
                 val raw = response.body() ?: emptyList()
-                _rooms.update { raw.filter { it.isInService() } }
+                _rooms.update { raw.filter { it.isOperational } }
                 Log.d("ROOM_REPO", "fetchRooms: ${_rooms.value.size} habitaciones")
             } else {
                 _error.value = "Error al cargar habitaciones: ${response.code()}"
@@ -77,8 +79,8 @@ object RoomRepository {
             val response = RetrofitClient.roomService.getAllRooms()
             if (response.isSuccessful) {
                 val list = response.body() ?: emptyList()
-                _rooms.update { list.filter { it.isInService() } }
-                list.find { it.room_id == roomId && it.isInService() }
+                _rooms.update { list.filter { it.isOperational } }
+                list.find { it.room_id == roomId && it.isOperational }
             } else {
                 Log.e("ROOM_REPO", "getRoomById fallback error ${response.code()}")
                 null
@@ -89,29 +91,33 @@ object RoomRepository {
         }
     }
 
-    suspend fun fetchAvailableRoomsByDates(checkIn: String, checkOut: String) {
+    suspend fun fetchAvailableRoomsByDates(checkIn: String, checkOut: String, guests: Int = 2) {
         _availableLoading.value = true
         _availableError.value = null
         _availableRooms.update { emptyList() }
 
         val checkInISO = toISO(checkIn)
         val checkOutISO = toISO(checkOut)
-        Log.d("ROOM_REPO", "fetchAvailable: $checkInISO → $checkOutISO")
+        Log.d("ROOM_REPO", "fetchAvailable: $checkInISO → $checkOutISO guests=$guests")
 
         try {
             val response = RetrofitClient.roomService
-                .getAvailableRoomsByDates(checkInISO, checkOutISO)
+                .getAvailableRoomsByDates(checkInISO, checkOutISO, guests)
 
             if (response.isSuccessful) {
-                val list = (response.body() ?: emptyList()).filter { it.isInService() }
+                _availableError.value = null
+                val list = (response.body() ?: emptyList()).filter { it.isOperational }
                 _availableRooms.update { list }
                 Log.d("ROOM_REPO", "fetchAvailable OK: ${list.size} habitaciones")
             } else {
-                Log.w("ROOM_REPO", "room/available devolvió ${response.code()}, usando fallback")
+                val errBody = response.errorBody()?.string().orEmpty()
+                Log.w("ROOM_REPO", "room/available ${response.code()}: $errBody")
+                _availableError.value = "Disponibilidad: ${response.code()} ${errBody.take(200)}"
                 fetchAvailableFallback()
             }
         } catch (e: Exception) {
             Log.e("ROOM_REPO", "fetchAvailable exception: ${e.message}")
+            _availableError.value = e.message
             fetchAvailableFallback()
         } finally {
             _availableLoading.value = false
@@ -123,7 +129,7 @@ object RoomRepository {
         try {
             val response = RetrofitClient.roomService.getAllRooms()
             if (response.isSuccessful) {
-                val list = (response.body() ?: emptyList()).filter { it.isInService() && it.isFreeNow() }
+                val list = (response.body() ?: emptyList()).filter { it.isOperational && it.isFreeNow() }
                 _availableRooms.update { list }
                 Log.d("ROOM_REPO", "fallback OK: ${list.size} candidatas")
             } else {
@@ -140,5 +146,14 @@ object RoomRepository {
 
     fun clearAvailableError() {
         _availableError.value = null
+    }
+
+    suspend fun fetchExtraServices(): List<ExtraService> {
+        return try {
+            val r = RetrofitClient.roomService.listExtraServices()
+            if (r.isSuccessful) r.body() ?: emptyList() else emptyList()
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 }

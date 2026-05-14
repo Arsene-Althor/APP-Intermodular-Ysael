@@ -1,5 +1,6 @@
 package com.example.hotel_pere_maria_app.ui.Service
 
+import com.example.hotel_pere_maria_app.ui.Models.ExtraService
 import com.example.hotel_pere_maria_app.ui.Models.Room
 import retrofit2.Response
 import retrofit2.http.GET
@@ -13,6 +14,8 @@ interface RoomService {
      * @return Response con lista de habitaciones
      */
     @GET("room/all") suspend fun getAllRooms(): Response<List<Room>>
+
+    @GET("room/extra-services") suspend fun listExtraServices(): Response<List<ExtraService>>
 
     /**
      * Obtiene una habitación específica por su ID
@@ -30,7 +33,8 @@ interface RoomService {
      */
     @GET("room/available")
     suspend fun getAvailableRoomsByDates(
-            @Query("check_in") checkIn: String,
-            @Query("check_out") checkOut: String
+            @Query("checkIn") checkIn: String,
+            @Query("checkOut") checkOut: String,
+            @Query("guests") guests: Int? = null,
     ): Response<List<Room>>
 }

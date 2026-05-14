@@ -1,5 +1,7 @@
 package com.example.hotel_pere_maria_app.ui.Views
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -21,7 +23,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
@@ -414,6 +419,72 @@ fun Profile(onLogout: () -> Unit, onOpenMyReviews: () -> Unit = {}, viewModel: P
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                        text = "Más información (soporte)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(
+                        onClick = {
+                                val intent =
+                                        Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=IES+Pere+Maria+Orts+i+Bosch+Benidorm"))
+                                                .apply { setPackage("com.google.android.apps.maps") }
+                                try {
+                                        context.startActivity(intent)
+                                } catch (e: Exception) {
+                                        context.startActivity(
+                                                Intent(
+                                                        Intent.ACTION_VIEW,
+                                                        Uri.parse("geo:0,0?q=IES+Pere+Maria+Orts+i+Bosch+Benidorm")
+                                                )
+                                        )
+                                }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                ) {
+                        Icon(Icons.Default.LocationOn, null, Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text("Mapa / cómo llegar")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                        onClick = {
+                                context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:965000000")))
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                ) {
+                        Icon(Icons.Default.Phone, null, Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text("Llamar al hotel")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                        onClick = {
+                                val mail =
+                                        Intent(Intent.ACTION_SENDTO).apply {
+                                                data =
+                                                        Uri.parse(
+                                                                "mailto:info@hotelperemaria.com?subject=${Uri.encode("Consulta desde la App Móvil")}"
+                                                        )
+                                        }
+                                try {
+                                        context.startActivity(mail)
+                                } catch (e: Exception) {
+                                }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                ) {
+                        Icon(Icons.Default.Email, null, Modifier.size(20.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text("Enviar correo")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(16.dp))
 

@@ -29,17 +29,23 @@ fun ScaffoldMain(onLogout: () -> Unit = {}) {
             currentRoute.startsWith(Routes.ModReserva.route) -> false
             currentRoute.startsWith("ReservationAudit") -> false
             currentRoute == Routes.ReservationHistory.route -> false
+            currentRoute == Routes.InvoiceHistory.route -> false
             else -> true
         }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState ) },
-        bottomBar = {},
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
-            if(mostrarScafold){
-                TopAppBarState(ScaffoldnavController )}
+            if (mostrarScafold) {
+                TopAppBarState(ScaffoldnavController)
             }
+        },
+        bottomBar = {
+            if (mostrarScafold) {
+                BottomBookingBar(ScaffoldnavController, currentRoute)
+            }
+        },
     ) { innerpadding ->
         val pading = if(mostrarScafold) innerpadding else PaddingValues(0.dp)
         NavigationScaffold(ScaffoldnavController, modifier = Modifier.padding(pading), snackbarHostState,onLogout = onLogout )

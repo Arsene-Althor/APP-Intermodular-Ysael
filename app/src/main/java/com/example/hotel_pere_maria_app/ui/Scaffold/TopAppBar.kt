@@ -1,86 +1,77 @@
 package com.example.hotel_pere_maria_app.ui.Scaffold
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.hotel_pere_maria_app.R
 import com.example.hotel_pere_maria_app.ui.Navegation.Routes
+import com.example.hotel_pere_maria_app.ui.Navegation.navigateToBookingHome
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopAppBarView() {
-    TopAppBar(
-        title = { Text("HOTEL PERE MARIA", style = MaterialTheme.typography.titleMedium) },
-        navigationIcon = {
-            Image(
-                painter = painterResource(id = R.drawable.hotel_logo),
-                contentDescription = "Logo Hotel Pere Maria",
-                modifier = Modifier.size(90.dp),
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary),
-            )
-        },
-        colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Barra superior: logo rectangular (sin recorte circular), nombre del hotel centrado en el espacio
+ * disponible, solo acceso a perfil. Inicio y reservas están en [BottomBookingBar].
+ */
 @Composable
 fun TopAppBarState(navController: NavHostController) {
-    TopAppBar(
-        title = { Text("HOTEL PERE MARIA", style = MaterialTheme.typography.titleMedium) },
-        navigationIcon = {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 2.dp,
+    ) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Image(
                 painter = painterResource(id = R.drawable.hotel_logo),
-                contentDescription = "Logo Hotel Pere Maria",
-                modifier = Modifier.size(90.dp),
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary),
+                contentDescription = "Ir al inicio",
+                modifier =
+                    Modifier.size(width = 72.dp, height = 52.dp)
+                        .clickable { navController.navigateToBookingHome() },
+                contentScale = ContentScale.Fit,
             )
-        },
-        actions = {
+            Text(
+                text = "Hotel Pere Maria",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier =
+                    Modifier.weight(1f)
+                        .padding(horizontal = 8.dp),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+            )
             IconButton(
                 onClick = {
-                    navController.navigate(Routes.Reservations.route) {
-                        launchSingleTop = true
-                    }
-                }
+                    navController.navigate(Routes.User.route) { launchSingleTop = true }
+                },
             ) {
-                Icon(Icons.Default.Event, contentDescription = "Mis reservas")
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = "Mi cuenta",
+                    tint = MaterialTheme.colorScheme.primary,
+                )
             }
-            IconButton(
-                onClick = {
-                    navController.navigate(Routes.MyAccount.route) { launchSingleTop = true }
-                }
-            ) {
-                Icon(Icons.Default.Person, contentDescription = "Mi cuenta")
-            }
-        },
-        colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-    )
+        }
+    }
 }

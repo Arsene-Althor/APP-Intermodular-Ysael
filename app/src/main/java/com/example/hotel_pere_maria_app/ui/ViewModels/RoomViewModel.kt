@@ -80,7 +80,7 @@ class RoomViewModel : ViewModel() {
         availability: Boolean?
     ): List<Room> {
         // Cliente: nunca mostrar habitaciones marcadas fuera de servicio (ya filtradas en repo; refuerzo).
-        var filtered = rooms.filter { it.isInService() }
+        var filtered = rooms.filter { it.isOperational }
 
         if (type != "Todos") {
             filtered = filtered.filter { it.type.equals(type, ignoreCase = true) }
@@ -89,9 +89,9 @@ class RoomViewModel : ViewModel() {
         availability?.let { wantFree ->
             filtered =
                 if (wantFree) {
-                    filtered.filter { !it.isOccupiedNowEffective() }
+                    filtered.filter { !it.isOccupiedNow }
                 } else {
-                    filtered.filter { it.isOccupiedNowEffective() }
+                    filtered.filter { it.isOccupiedNow }
                 }
         }
 
@@ -163,9 +163,9 @@ class RoomViewModel : ViewModel() {
      * @param checkIn Fecha de check-in (formato: dd/MM/yyyy)
      * @param checkOut Fecha de check-out (formato: dd/MM/yyyy)
      */
-    fun loadAvailableRoomsByDates(checkIn: String, checkOut: String) {
+    fun loadAvailableRoomsByDates(checkIn: String, checkOut: String, guests: Int = 2) {
         viewModelScope.launch {
-            RoomRepository.fetchAvailableRoomsByDates(checkIn, checkOut)
+            RoomRepository.fetchAvailableRoomsByDates(checkIn, checkOut, guests)
         }
     }
 

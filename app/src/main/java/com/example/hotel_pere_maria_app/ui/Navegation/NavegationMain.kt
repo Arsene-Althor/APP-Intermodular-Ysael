@@ -4,8 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.rememberNavController
 
 @Composable
-fun NavegationMain(){
-    val navcontrller = rememberNavController()
-
-    NavigationLogin( navcontrller)
+fun NavegationMain() {
+    val navController = rememberNavController()
+    NavigationLogin(navigationController = navController)
 }

@@ -15,7 +15,17 @@ data class Reservation(
     val check_out: Date,
     val price: Number,
     val cancelation_date: Date? = null,
-    val createdBy: String
+    val createdBy: String,
+    /** Asignado tras checkout en recepción (API). Si no es null, existe PDF en GET …/invoice. */
+    val invoice_number: String? = null,
+    val checkout_completed_at: Date? = null,
+)
+
+/** Respuesta de `GET /invoices?userId=`. */
+data class InvoicesByUserResponse(
+    val user_id: String? = null,
+    val count: Int = 0,
+    val reservations: List<Reservation> = emptyList(),
 )
 
 object ReservationRepository {
