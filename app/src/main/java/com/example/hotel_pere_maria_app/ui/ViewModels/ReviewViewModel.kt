@@ -67,13 +67,19 @@ class ReviewViewModel : ViewModel() {
             return
         }
 
-        // Comprobar si tiene reserva en esta habitación (cualquier rol con reserva en BD puede reseñar vía API)
         val reservations = ReservationRepository.reservations.value
-        val hasReservation = reservations.any { it.room_id == roomId }
-        _canReview.value = hasReservation
+        val now = System.currentTimeMillis()
+        val hasEligibleStay =
+            reservations.any { r ->
+                r.room_id == roomId &&
+                    r.user_id == userId &&
+                    r.cancelation_date == null &&
+                    r.check_out.time <= now
+            }
+        _canReview.value = hasEligibleStay
 
-        // Buscar si ya tiene una reseña en esta habitación
-        val existing = ReviewRepository.reviews.value.find { it.user_id == userId }
+        val existing =
+            ReviewRepository.reviews.value.find { it.user_id == userId && it.room_id == roomId }
         _userReview.value = existing
     }
 

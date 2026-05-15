@@ -31,6 +31,7 @@ import com.example.hotel_pere_maria_app.ui.Navegation.Routes
 import com.example.hotel_pere_maria_app.ui.ViewModels.ReviewViewModel
 import com.example.hotel_pere_maria_app.ui.ViewModels.RoomViewModel
 import com.example.hotel_pere_maria_app.ui.booking.BookingSearchSession
+import com.example.hotel_pere_maria_app.ui.Service.SessionManager
 
 /**
  * Pantalla de detalles de una habitación específica. Incluye información de la habitación y sección
@@ -287,6 +288,14 @@ fun RoomDetail(
                                 }
                             }
                             Spacer(modifier = Modifier.height(24.dp))
+                        } else if (SessionManager.userInfo != null) {
+                            Text(
+                                text =
+                                    "Las valoraciones solo están disponibles tras completar una estancia en esta habitación (reserva no cancelada y fecha de salida ya pasada).",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                            )
                         }
 
                         // Lista de reseñas existentes

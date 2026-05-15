@@ -25,7 +25,7 @@ interface ReservationService{
     ): Response<List<BookingAuditEntry>>
 
     @POST("reservation/getPrice")
-    suspend fun getPrice(@Body datos : Map<String, String>): Response<Map<String,Double>>
+    suspend fun getPrice(@Body datos : Map<String, String>): Response<Map<String, Any>>
 
     @POST("reservation/add")
     suspend fun addReservation(@Body datos: Map<String, String>): Response<Map<String, String>>
@@ -42,10 +42,17 @@ interface ReservationService{
     @PATCH("reservation/update")
     suspend fun updateReservation(@Body datos : Map<String, String>): Response<Map<String, Any>>
 
-    /** PDF factura (binario). Cliente: solo su reserva. */
+    /** PDF factura fiscal (binario). Requiere checkout en recepción. */
     @Streaming
     @GET("reservation/{reservation_id}/invoice")
     suspend fun downloadInvoicePdf(
+        @Path("reservation_id") reservationId: String,
+    ): Response<ResponseBody>
+
+    /** Justificante de reserva / pago simulado (PDF no fiscal). Siempre que seas dueño o personal. */
+    @Streaming
+    @GET("reservation/{reservation_id}/booking-receipt")
+    suspend fun downloadBookingReceiptPdf(
         @Path("reservation_id") reservationId: String,
     ): Response<ResponseBody>
 

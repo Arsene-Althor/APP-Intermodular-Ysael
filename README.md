@@ -16,6 +16,7 @@ Cliente móvil para huéspedes del **Hotel Pere María**, desarrollado con **Kot
 - [Ejemplos de código](#ejemplos-de-código)
 - [Flujos principales](#flujos-principales)
 - [Evolución del proyecto](#evolución-del-proyecto-desde-la-creación)
+- [P19 · Flexibilidad y fidelidad (API; UI pendiente)](#p19--flexibilidad-y-fidelidad-api-ui-pendiente)
 
 ---
 
@@ -96,6 +97,9 @@ com/example/hotel_pere_maria_app/
     │
     ├── Service/
     │   ├── RetrofitClient.kt
+    │   ├── ReservationService.kt   # mine, invoice, booking-receipt, audit…
+    │   ├── InvoicePdfHelper.kt     # descarga y apertura PDF (justificante + factura)
+    │   ├── SessionManager.kt       # JWT + cierre sesión ante 401/403
     │   ├── RoomService.kt
     │   └── …
     │
@@ -109,6 +113,10 @@ com/example/hotel_pere_maria_app/
     │   └── TopAppBar.kt
     │
     ├── Views/
+    │   ├── MyBookingsScreens.kt    # Mis reservas + historial (PDFs)
+    │   ├── InvoiceHistoryScreen.kt # Mis facturas
+    │   ├── ReservationAuditScreen.kt
+    │   ├── ModReserva.kt
     │   ├── RoomDetail.kt
     │   ├── Profile.kt
     │   └── …
@@ -187,6 +195,20 @@ suspend fun listExtraServices(): Response<List<ExtraService>>
 ```
 
 Si `room/available` devuelve error HTTP, el repositorio guarda el cuerpo en `availableError` para mostrarlo en la UI (no solo un fallo silencioso).
+
+### Reservas y PDF (`ReservationService.kt`)
+
+```kotlin
+@GET("reservation/{reservation_id}/booking-receipt")
+@Streaming
+suspend fun downloadBookingReceiptPdf(@Path("reservation_id") reservationId: String): Response<ResponseBody>
+
+@GET("reservation/{reservation_id}/invoice")
+@Streaming
+suspend fun downloadInvoicePdf(@Path("reservation_id") reservationId: String): Response<ResponseBody>
+```
+
+El justificante **no** exige `invoice_number`; la factura fiscal **sí** (tras checkout en recepción vía WPF).
 
 ---
 
@@ -295,8 +317,10 @@ HorizontalPager(
 1. **Inicio** (`BookingHomeScreen`): el usuario elige fechas, ajusta personas y rango de precio; opcionalmente ve su **próxima reserva**.
 2. **Resultados** (`BookingResultsScreen`): lista desde `GET /room/available`; orden por valoración; filtro de precio usando `displayPricePerNight()`; chips de **servicios extra** según catálogo (todos los seleccionados deben estar en la habitación).
 3. **Detalle** (`RoomDetail`): carrusel de imágenes, descripción, reseñas y botón de reserva si hay sesión de búsqueda válida.
-4. **Confirmación** (`BookingConfirmScreen`): precio vía `POST /reservation/getPrice` y alta con `POST /reservation/add`.
-5. **Perfil** (`Profile`): datos de usuario + **Soporte** (mapa, teléfono, correo) centralizado aquí en lugar del antiguo home.
+4. **Confirmación** (`BookingConfirmScreen`): precio vía `POST /reservation/getPrice` y alta con `POST /reservation/add` (pago simulado).
+5. **Mis reservas / historial**: modificar, cancelar, ver **Actividad**; descargar **justificante PDF** en cualquier momento; **factura fiscal** solo tras checkout.
+6. **Mis facturas**: listado de facturas emitidas + reservas pendientes de factura fiscal con justificante descargable.
+7. **Perfil** (`Profile`): datos de usuario + **Soporte** (mapa, teléfono, correo) centralizado aquí en lugar del antiguo home.
 
 ---
 
@@ -341,16 +365,54 @@ Orden aproximado de **novedades** que se fueron incorporando; cada bloque explic
 - **Sin bottom navigation bar**: la **TopAppBar** concentra inicio, reservas y perfil; menos ruido visual y foco en buscar y reservar.
 - **Soporte** (mapa, teléfono, correo) agrupado en **Perfil** en lugar de disperso en un home legacy.
 
-### 8. Factura PDF (P5 cliente)
+### 8. Documentos PDF: justificante y factura fiscal
 
-- **`Reservation`**: campos opcionales `invoice_number`, `checkout_completed_at` (JSON de `GET /reservation/mine` y listados de factura).
-- **`ReservationService`**: `GET reservation/{id}/invoice` (PDF binario, `@Streaming`) y `GET /invoices?userId=` → `InvoicesByUserResponse`.
-- **`InvoicePdfHelper`**: descarga a `cacheDir/invoices/`, **`FileProvider`** (`${applicationId}.fileprovider`) y `Intent.ACTION_VIEW` para abrir el PDF.
-- **Mis reservas**: botón **Descargar factura (PDF)** si `invoice_number` no es null; acceso **Mis facturas** en la barra superior.
-- **`InvoiceHistoryScreen`**: lista facturas del usuario (fecha de emisión preferente `checkout_completed_at`, total, **Ver PDF**).
+Dos PDF distintos, alineados con la API:
+
+| Documento | Endpoint | Cuándo en la UI |
+|-----------|----------|-----------------|
+| **Justificante** (no fiscal) | `GET reservation/{id}/booking-receipt` | Siempre que exista la reserva (tras pago simulado) |
+| **Factura fiscal** | `GET reservation/{id}/invoice` | Solo si `invoice_number != null` (post-checkout recepción) |
+
+**Código:**
+
+- **`Reservation`**: `invoice_number`, `checkout_completed_at`; helper `tieneFactura()` para la factura fiscal.
+- **`ReservationService`**: `downloadBookingReceiptPdf` y `downloadInvoicePdf` (`@Streaming`).
+- **`InvoicePdfHelper`**: `downloadAndOpenBookingReceipt` (caché `Justificante-*.pdf`) y `downloadAndOpenPdf` (caché `Factura-*.pdf`); apertura vía **`FileProvider`** + visor externo.
+
+**Pantallas con descarga de justificante:**
+
+- **Mis reservas** (`MyBookingsScreens`): tarjeta activa — justificante + factura fiscal si aplica.
+- **Historial de reservas**: mismo patrón por fila.
+- **Actividad** (`ReservationAuditScreen`): botón bajo el historial amigable.
+- **Gestionar reserva** (`ModReserva`): botón antes del bloque de fechas.
+- **Mis facturas** (`InvoiceHistoryScreen`): sección “sin factura fiscal aún” con **Descargar justificante (PDF)** por reserva pendiente; facturas emitidas con **Ver PDF**.
+
+**Sesión:** `InvoiceHistoryScreen` y otras pantallas usan `SessionManager.shouldLogoutForApiError` + `handleUnauthorized()` ante JWT expirado o inválido (evita quedarse en “Mis facturas” con error opaco).
 
 ### 9. Limpieza del árbol de código
 
 - Eliminación de flujos sustituidos (p. ej. formulario `Add` antiguo, listado `RoomList` como entrada principal, barra inferior duplicada). `Home.kt` puede existir como referencia pero **no** es el destino del `NavHost` actual.
+
+---
+
+## P19 · Flexibilidad y fidelidad (API; UI pendiente)
+
+La **API** ya expone el programa de **entrada anticipada** y **salida tardía** (ver README de `API-Intermodular-Ysael`). La app Android **aún no** incluye pantallas para solicitar ni ver el estado; cuando se implemente:
+
+| Acción cliente | Endpoint previsto |
+|----------------|-------------------|
+| Ver rango y tarifas | `GET /reservation/{id}/flexibility` |
+| Pedir entrada antes de las 12:00 | `POST …/flexibility/early-checkin` |
+| Pedir salida después de las 11:00 | `POST …/flexibility/late-checkout` |
+
+**Fidelidad (P9):** rango `bronze` / `silver` / `gold` en colección `ClientLoyaltyStats` → descuento sobre tarifa base (40 € entrada anticipada por defecto). Sin fila en BD → bronce (0 % descuento).
+
+**Relación con otros módulos:**
+
+- Tras **aprobar** una solicitud, la API actualiza `check_in` o `check_out` y suma `final_fee` al `price` (mostrar precio actualizado en gestionar reserva).
+- Distinto del **check-in en recepción** (`reception_check_in_at`), que registra la llegada física del huésped en mostrador.
+
+Documentación completa de contrato JSON, estados `pending` / `approved` / `rejected` y variables `.env` `FLEX_*`: [API — P19](../API-Intermodular-Ysael/README.md#p19--flexibilidad-entrada-anticipada--salida-tardía).
 
 ---

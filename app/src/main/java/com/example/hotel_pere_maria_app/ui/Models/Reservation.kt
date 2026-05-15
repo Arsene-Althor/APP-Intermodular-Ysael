@@ -2,6 +2,7 @@ package com.example.hotel_pere_maria_app.ui.Models
 
 import android.util.Log
 import com.example.hotel_pere_maria_app.ui.Service.RetrofitClient
+import com.example.hotel_pere_maria_app.ui.Service.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -35,13 +36,17 @@ object ReservationRepository {
     suspend fun fetchReservations(){
         try {
             val response = RetrofitClient.reservationService.getMine()
-            if(response.isSuccessful){
-                val listReservas = response.body()
-                if(listReservas != null){
-                    _reservations.update { listReservas.toMutableList() }
+            if (!response.isSuccessful) {
+                val err = response.errorBody()?.string().orEmpty()
+                if (SessionManager.shouldLogoutForApiError(response.code(), err)) {
+                    SessionManager.handleUnauthorized()
                 }
-            }else{
-                Log.e("API_ERROR", "Código de error: ${response.code()}")
+                Log.e("API_ERROR", "Código de error: ${response.code()} $err")
+                return
+            }
+            val listReservas = response.body()
+            if (listReservas != null) {
+                _reservations.update { listReservas.toMutableList() }
             }
         }catch (e: Exception){
             Log.e("API_ERROR", "Error al cargar productos: ${e.message}")

@@ -61,7 +61,8 @@ fun MyBookingsScreen(navController: NavController) {
     val fmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var pdfBusyId by remember { mutableStateOf<String?>(null) }
+    var pdfInvoiceBusyFor by remember { mutableStateOf<String?>(null) }
+    var pdfReceiptBusyFor by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         ReservationRepository.fetchReservations()
@@ -135,15 +136,41 @@ fun MyBookingsScreen(navController: NavController) {
                         ActiveBookingCard(
                             reserva = r,
                             fmt = fmt,
-                            invoiceDownloading = pdfBusyId == r.reservation_id,
+                            invoiceDownloading = pdfInvoiceBusyFor == r.reservation_id,
+                            receiptDownloading = pdfReceiptBusyFor == r.reservation_id,
                             onOpen = {
                                 navController.navigate("${Routes.ModReserva.route}/${r.reservation_id}")
                             },
                             onHistorial = {
                                 navController.navigate(Routes.ReservationAudit.createRoute(r.reservation_id))
                             },
+                            onDescargarJustificante = {
+                                pdfReceiptBusyFor = r.reservation_id
+                                scope.launch {
+                                    try {
+                                        when (
+                                            val res =
+                                                InvoicePdfHelper.downloadAndOpenBookingReceipt(context, r.reservation_id)
+                                        ) {
+                                            is InvoicePdfHelper.Result.Error ->
+                                                Toast.makeText(context, res.message, Toast.LENGTH_LONG).show()
+
+                                            InvoicePdfHelper.Result.NoPdfViewer ->
+                                                Toast.makeText(
+                                                    context,
+                                                    "No hay visor de PDF instalado",
+                                                    Toast.LENGTH_LONG,
+                                                ).show()
+
+                                            InvoicePdfHelper.Result.Ok -> {}
+                                        }
+                                    } finally {
+                                        pdfReceiptBusyFor = null
+                                    }
+                                }
+                            },
                             onDescargarFactura = {
-                                pdfBusyId = r.reservation_id
+                                pdfInvoiceBusyFor = r.reservation_id
                                 scope.launch {
                                     try {
                                         when (
@@ -163,7 +190,7 @@ fun MyBookingsScreen(navController: NavController) {
                                             InvoicePdfHelper.Result.Ok -> {}
                                         }
                                     } finally {
-                                        pdfBusyId = null
+                                        pdfInvoiceBusyFor = null
                                     }
                                 }
                             },
@@ -180,8 +207,10 @@ private fun ActiveBookingCard(
     reserva: Reservation,
     fmt: SimpleDateFormat,
     invoiceDownloading: Boolean,
+    receiptDownloading: Boolean,
     onOpen: () -> Unit,
     onHistorial: () -> Unit,
+    onDescargarJustificante: () -> Unit,
     onDescargarFactura: () -> Unit,
 ) {
     Card(
@@ -215,10 +244,30 @@ private fun ActiveBookingCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "Justificante: PDF no fiscal (pago simulado en la app).",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (receiptDownloading) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                    Text("Descargando justificante…", style = MaterialTheme.typography.bodySmall)
+                }
+            } else {
+                TextButton(onClick = onDescargarJustificante, modifier = Modifier.fillMaxWidth()) {
+                    Text("Descargar justificante (PDF)")
+                }
+            }
             if (reserva.tieneFactura()) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "Factura: ${reserva.invoice_number}",
+                    text = "Factura fiscal: ${reserva.invoice_number}",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.tertiary,
                 )
@@ -234,7 +283,7 @@ private fun ActiveBookingCard(
                     }
                 } else {
                     TextButton(onClick = onDescargarFactura, modifier = Modifier.fillMaxWidth()) {
-                        Text("Descargar factura (PDF)")
+                        Text("Descargar factura fiscal (PDF)")
                     }
                 }
             }
@@ -253,7 +302,8 @@ fun ReservationHistoryScreen(navController: NavController) {
     val fmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var pdfBusyId by remember { mutableStateOf<String?>(null) }
+    var pdfInvoiceBusyFor by remember { mutableStateOf<String?>(null) }
+    var pdfReceiptBusyFor by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         ReservationRepository.fetchReservations()
@@ -293,7 +343,7 @@ fun ReservationHistoryScreen(navController: NavController) {
         ) {
             item {
                 Text(
-                    text = "Todas tus reservas. Pulsa «Actividad» para ver el historial amigable.",
+                    text = "Todas tus reservas. Justificante (pago simulado) en PDF siempre; factura fiscal solo tras checkout en recepción.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 12.dp),
@@ -309,9 +359,35 @@ fun ReservationHistoryScreen(navController: NavController) {
                         reserva = r,
                         fmt = fmt,
                         navController = navController,
-                        invoiceDownloading = pdfBusyId == r.reservation_id,
+                        invoiceDownloading = pdfInvoiceBusyFor == r.reservation_id,
+                        receiptDownloading = pdfReceiptBusyFor == r.reservation_id,
+                        onDescargarJustificante = {
+                            pdfReceiptBusyFor = r.reservation_id
+                            scope.launch {
+                                try {
+                                    when (
+                                        val res =
+                                            InvoicePdfHelper.downloadAndOpenBookingReceipt(context, r.reservation_id)
+                                    ) {
+                                        is InvoicePdfHelper.Result.Error ->
+                                            Toast.makeText(context, res.message, Toast.LENGTH_LONG).show()
+
+                                        InvoicePdfHelper.Result.NoPdfViewer ->
+                                            Toast.makeText(
+                                                context,
+                                                "No hay visor de PDF instalado",
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+
+                                        InvoicePdfHelper.Result.Ok -> {}
+                                    }
+                                } finally {
+                                    pdfReceiptBusyFor = null
+                                }
+                            }
+                        },
                         onDescargarFactura = {
-                            pdfBusyId = r.reservation_id
+                            pdfInvoiceBusyFor = r.reservation_id
                             scope.launch {
                                 try {
                                     when (
@@ -331,7 +407,7 @@ fun ReservationHistoryScreen(navController: NavController) {
                                         InvoicePdfHelper.Result.Ok -> {}
                                     }
                                 } finally {
-                                    pdfBusyId = null
+                                    pdfInvoiceBusyFor = null
                                 }
                             }
                         },
@@ -348,6 +424,8 @@ private fun HistoryBookingRow(
     fmt: SimpleDateFormat,
     navController: NavController,
     invoiceDownloading: Boolean,
+    receiptDownloading: Boolean,
+    onDescargarJustificante: () -> Unit,
     onDescargarFactura: () -> Unit,
 ) {
     val estado =
@@ -388,16 +466,27 @@ private fun HistoryBookingRow(
                     Text("Actividad")
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
+            if (receiptDownloading) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Text("Justificante…", style = MaterialTheme.typography.bodySmall)
+                }
+            } else {
+                TextButton(onClick = onDescargarJustificante) {
+                    Text("Justificante reserva (PDF)")
+                }
+            }
             if (reserva.tieneFactura()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 if (invoiceDownloading) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                        Text("Descargando…", style = MaterialTheme.typography.bodySmall)
+                        Text("Factura…", style = MaterialTheme.typography.bodySmall)
                     }
                 } else {
                     TextButton(onClick = onDescargarFactura) {
-                        Text("Descargar factura (PDF)")
+                        Text("Factura fiscal (PDF)")
                     }
                 }
             }

@@ -16,15 +16,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,7 +53,7 @@ import com.example.hotel_pere_maria_app.ui.Models.Room
 import com.example.hotel_pere_maria_app.ui.Models.RoomRepository
 import com.example.hotel_pere_maria_app.ui.Navegation.Routes
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun BookingResultsScreen(navController: NavHostController) {
     val raw by RoomRepository.availableRooms.collectAsState()
@@ -56,6 +63,8 @@ fun BookingResultsScreen(navController: NavHostController) {
     var sortHighFirst by remember { mutableStateOf(true) }
     val serviceSelection = remember { mutableStateMapOf<String, Boolean>() }
     var catalog by remember { mutableStateOf<List<ExtraService>>(emptyList()) }
+    var showFilterSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val sessionGuests = BookingSearchSession.guests
     val sessionPriceMin = BookingSearchSession.priceMin
@@ -88,63 +97,130 @@ fun BookingResultsScreen(navController: NavHostController) {
             }
             .sortedBy { if (sortHighFirst) -it.rate else it.rate }
 
+    val sortLabel =
+        if (sortHighFirst) {
+            "Valoración: mayor primero"
+        } else {
+            "Valoración: menor primero"
+        }
+    val extraCount = selectedIds.size
+
+    if (showFilterSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showFilterSheet = false },
+            sheetState = sheetState,
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 28.dp),
+            ) {
+                Text(
+                    "Filtros y ordenación",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(12.dp))
+
+                Text("Ordenar por", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 8.dp)) {
+                    FilterChip(
+                        selected = sortHighFirst,
+                        onClick = { sortHighFirst = true },
+                        label = { Text("Valoración: mayor primero") },
+                    )
+                    FilterChip(
+                        selected = !sortHighFirst,
+                        onClick = { sortHighFirst = false },
+                        label = { Text("Valoración: menor primero") },
+                    )
+                }
+
+                Text(
+                    "Servicios extra",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    if (catalog.isEmpty()) {
+                        "No hay servicios en catálogo."
+                    } else {
+                        "La habitación debe incluir todos los servicios seleccionados."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(vertical = 8.dp),
+                ) {
+                    catalog.forEach { svc ->
+                        val on = serviceSelection[svc.serviceId] == true
+                        FilterChip(
+                            selected = on,
+                            onClick = { serviceSelection[svc.serviceId] = !on },
+                            label = {
+                                Text(svc.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = { showFilterSheet = false },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Listo")
+                }
+            }
+        }
+    }
+
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             IconButton(onClick = { navController.popBackStack() }) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
             }
-            Text(
-                "Resultados",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-
-        Text("Ordenar por", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 8.dp)) {
-            FilterChip(
-                selected = sortHighFirst,
-                onClick = { sortHighFirst = true },
-                label = { Text("Valoración: mayor primero") },
-            )
-            FilterChip(
-                selected = !sortHighFirst,
-                onClick = { sortHighFirst = false },
-                label = { Text("Valoración: menor primero") },
-            )
-        }
-
-        Text(
-            "Servicios extra",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            if (catalog.isEmpty()) {
-                "No hay servicios en catálogo (empleado: créalos en WPF). Luego podrás filtrar aquí."
-            } else {
-                "La habitación debe incluir todos los servicios seleccionados."
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(vertical = 8.dp),
-        ) {
-            catalog.forEach { svc ->
-                val on = serviceSelection[svc.serviceId] == true
-                FilterChip(
-                    selected = on,
-                    onClick = { serviceSelection[svc.serviceId] = !on },
-                    label = {
-                        Text(svc.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Resultados",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    buildString {
+                        append(sortLabel)
+                        if (extraCount > 0) {
+                            append(" · ")
+                            append(extraCount)
+                            append(if (extraCount == 1) " servicio" else " servicios")
+                        }
                     },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+            BadgedBox(
+                badge = {
+                    if (extraCount > 0) {
+                        Badge { Text("$extraCount") }
+                    }
+                },
+            ) {
+                Button(onClick = { showFilterSheet = true }) {
+                    Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.height(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Filtros")
+                }
+            }
         }
+
+        Spacer(Modifier.height(8.dp))
 
         when {
             loading ->

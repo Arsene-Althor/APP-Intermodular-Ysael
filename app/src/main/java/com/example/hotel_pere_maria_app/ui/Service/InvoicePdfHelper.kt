@@ -76,4 +76,60 @@ object InvoicePdfHelper {
                 Result.Error(e.message ?: "Error de red")
             }
         }
+
+    /**
+     * Justificante de reserva / pago simulado (GET …/booking-receipt). No requiere checkout.
+     */
+    suspend fun downloadAndOpenBookingReceipt(
+        context: Context,
+        reservationId: String,
+    ): Result =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.reservationService.downloadBookingReceiptPdf(reservationId)
+                if (!response.isSuccessful) {
+                    val errBody = response.errorBody()?.string()?.take(500)
+                    return@withContext Result.Error(errBody ?: "Error HTTP ${response.code()}")
+                }
+                val body = response.body() ?: return@withContext Result.Error("Respuesta vacía")
+                val bytes = body.byteStream().use { it.readBytes() }
+                if (bytes.size < 4 || !bytes.copyOfRange(0, 4).contentEquals(byteArrayOf(0x25, 0x50, 0x44, 0x46))) {
+                    return@withContext Result.Error("La respuesta no parece un PDF")
+                }
+                val dir = File(context.cacheDir, "invoices").apply { mkdirs() }
+                val safeId = reservationId.replace(Regex("[^A-Za-z0-9_-]"), "_")
+                val file = File(dir, "Justificante-$safeId.pdf")
+                file.writeBytes(bytes)
+
+                withContext(Dispatchers.Main) {
+                    try {
+                        val appCtx = context.applicationContext
+                        val uri =
+                            FileProvider.getUriForFile(
+                                appCtx,
+                                "${appCtx.packageName}.fileprovider",
+                                file,
+                            )
+                        val viewIntent =
+                            Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(uri, "application/pdf")
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                        val chooser =
+                            Intent.createChooser(viewIntent, "Abrir justificante").apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                        appCtx.startActivity(chooser)
+                        Result.Ok
+                    } catch (_: ActivityNotFoundException) {
+                        Result.NoPdfViewer
+                    } catch (e: Exception) {
+                        Result.Error(e.message ?: "No se pudo abrir el visor")
+                    }
+                }
+            } catch (e: Exception) {
+                Result.Error(e.message ?: "Error de red")
+            }
+        }
 }

@@ -1,5 +1,6 @@
 package com.example.hotel_pere_maria_app.ui.Views
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +25,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -33,9 +35,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,15 +50,20 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.hotel_pere_maria_app.R
 import com.example.hotel_pere_maria_app.ui.ViewModels.HistorialItemUi
+import com.example.hotel_pere_maria_app.ui.Service.InvoicePdfHelper
 import com.example.hotel_pere_maria_app.ui.ViewModels.ModReservaViewModel
 import com.example.hotel_pere_maria_app.ui.ViewModels.ModuiState
 import com.example.ui.theme.AppTheme
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModReserva(snackbarHostState : SnackbarHostState, reservaId: String, onBack: () -> Unit) {
     val ModViewModel: ModReservaViewModel = viewModel()
     val state by ModViewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var receiptBusy by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.mensajeRespuesta) {
         state.mensajeRespuesta?.let {
@@ -110,6 +121,52 @@ fun ModReserva(snackbarHostState : SnackbarHostState, reservaId: String, onBack:
                     cargando = state.historialCargando,
                     items = state.historialItems,
                 )
+
+                Text(
+                    text = "Justificante de reserva (PDF, no fiscal). La factura con IVA se emite en recepción al checkout.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (receiptBusy) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(28.dp))
+                    }
+                } else {
+                    OutlinedButton(
+                        onClick = {
+                            receiptBusy = true
+                            scope.launch {
+                                try {
+                                    when (
+                                        val res =
+                                            InvoicePdfHelper.downloadAndOpenBookingReceipt(context, reservaId)
+                                    ) {
+                                        is InvoicePdfHelper.Result.Error ->
+                                            Toast.makeText(context, res.message, Toast.LENGTH_LONG).show()
+
+                                        InvoicePdfHelper.Result.NoPdfViewer ->
+                                            Toast.makeText(
+                                                context,
+                                                "No hay visor de PDF instalado",
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+
+                                        InvoicePdfHelper.Result.Ok -> {}
+                                    }
+                                } finally {
+                                    receiptBusy = false
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Descargar justificante (PDF)")
+                    }
+                }
 
                 HorizontalDivider(thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.5f))
 

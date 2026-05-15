@@ -40,6 +40,7 @@ import com.example.hotel_pere_maria_app.ui.Navegation.Routes
 import com.example.hotel_pere_maria_app.ui.Service.RetrofitClient
 import com.example.hotel_pere_maria_app.ui.Service.SessionManager
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,12 +79,34 @@ fun BookingConfirmScreen(navController: NavHostController, roomId: String) {
                     "check_in" to ci,
                     "check_out" to co,
                 )
-            @Suppress("UNCHECKED_CAST")
-            val resp = RetrofitClient.reservationService.getPrice(body as Map<String, String>)
-            if (resp.isSuccessful && resp.body() != null) {
-                price = resp.body()!!["precio"] ?: 0.0
+            val resp = RetrofitClient.reservationService.getPrice(body)
+            if (!resp.isSuccessful) {
+                val rawErr = resp.errorBody()?.string().orEmpty()
+                if (SessionManager.shouldLogoutForApiError(resp.code(), rawErr)) {
+                    SessionManager.handleUnauthorized()
+                    return@LaunchedEffect
+                }
+                error =
+                    try {
+                        JSONObject(rawErr).optString("error", rawErr).ifBlank { "No se pudo calcular el precio" }
+                    } catch (_: Exception) {
+                        rawErr.ifBlank { "No se pudo calcular el precio (${resp.code()})" }
+                    }
+            } else if (resp.body() != null) {
+                val raw = resp.body()!!["precio"]
+                price =
+                    when (raw) {
+                        is Double -> raw
+                        is Float -> raw.toDouble()
+                        is Int -> raw.toDouble()
+                        is Number -> raw.toDouble()
+                        else -> 0.0
+                    }
+                if (!price.isFinite() || price < 0) {
+                    error = "Precio no válido en la respuesta del servidor"
+                }
             } else {
-                error = "No se pudo calcular el precio"
+                error = "Respuesta vacía del servidor"
             }
         } catch (e: Exception) {
             error = e.message
@@ -162,14 +185,32 @@ fun BookingConfirmScreen(navController: NavHostController, roomId: String) {
                                         RetrofitClient.reservationService.addReservation(
                                             req as Map<String, String>,
                                         )
-                                    if (res.isSuccessful) {
+                                    if (!res.isSuccessful) {
+                                        val raw = res.errorBody()?.string().orEmpty()
+                                        if (SessionManager.shouldLogoutForApiError(res.code(), raw)) {
+                                            SessionManager.handleUnauthorized()
+                                            return@launch
+                                        }
+                                        message =
+                                            try {
+                                                val jo = JSONObject(raw)
+                                                val det = jo.optString("detalle", "").trim()
+                                                val err = jo.optString("error", "").trim()
+                                                when {
+                                                    det.isNotBlank() && err.isNotBlank() -> "$err: $det"
+                                                    det.isNotBlank() -> det
+                                                    err.isNotBlank() -> err
+                                                    else -> raw.ifBlank { "Error al reservar (${res.code()})" }
+                                                }
+                                            } catch (_: Exception) {
+                                                raw.ifBlank { "Error al reservar (${res.code()})" }
+                                            }
+                                    } else {
                                         ReservationRepository.fetchReservations()
                                         navController.navigate(Routes.Reservations.route) {
                                             popUpTo(Routes.BookingHome.route) { inclusive = false }
                                             launchSingleTop = true
                                         }
-                                    } else {
-                                        message = res.errorBody()?.string() ?: "Error al reservar"
                                     }
                                 } catch (e: Exception) {
                                     message = e.message

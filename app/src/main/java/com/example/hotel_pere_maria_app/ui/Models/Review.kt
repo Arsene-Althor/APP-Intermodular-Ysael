@@ -96,8 +96,21 @@ object ReviewRepository {
                 fetchMyReviews()
                 Result.success(response.body()?.get("message") ?: "Reseña creada")
             } else {
-                val errorMsg = response.errorBody()?.string() ?: "Error ${response.code()}"
-                Result.failure(Exception(errorMsg))
+                val raw = response.errorBody()?.string().orEmpty()
+                val msg =
+                    try {
+                        val jo = org.json.JSONObject(raw)
+                        val det = jo.optString("detalle", "").trim()
+                        val err = jo.optString("error", "").trim()
+                        when {
+                            det.isNotBlank() && err.isNotBlank() -> "$err: $det"
+                            err.isNotBlank() -> err
+                            else -> raw.ifBlank { "Error ${response.code()}" }
+                        }
+                    } catch (_: Exception) {
+                        raw.ifBlank { "Error ${response.code()}" }
+                    }
+                Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -94,9 +94,17 @@ class ModReservaViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
         viewModelScope.launch {
             try {
                 val response = RetrofitClient.reservationService.getPrice(requestPrecio as Map<String, String>)
-                if(response.isSuccessful && response.body() != null){
-                    val precioReci = response.body()!!.get("precio") ?: 0.0
-                    _uiState.update { it.copy(priceNuevo = precioReci)}
+                if (response.isSuccessful && response.body() != null) {
+                    val raw = response.body()!!["precio"]
+                    val precioReci =
+                        when (raw) {
+                            is Double -> raw
+                            is Float -> raw.toDouble()
+                            is Int -> raw.toDouble()
+                            is Number -> raw.toDouble()
+                            else -> 0.0
+                        }
+                    _uiState.update { it.copy(priceNuevo = precioReci) }
                 }
             }catch (e: Exception){
                 println(e.message)

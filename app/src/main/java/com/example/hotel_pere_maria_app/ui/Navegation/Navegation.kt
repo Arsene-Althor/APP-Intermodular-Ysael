@@ -2,6 +2,7 @@ package com.example.hotel_pere_maria_app.ui.Navegation
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -59,6 +60,19 @@ fun NavigationLogin(navigationController: NavHostController) {
         }
 
         composable(Routes.Scaffold.route) {
+            DisposableEffect(navigationController) {
+                val cb: () -> Unit = {
+                    navigationController.navigate(Routes.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+                SessionManager.onSessionExpired = cb
+                onDispose {
+                    if (SessionManager.onSessionExpired === cb) {
+                        SessionManager.onSessionExpired = null
+                    }
+                }
+            }
             ScaffoldMain(
                 onLogout = {
                     navigationController.navigate(Routes.Login.route) {
