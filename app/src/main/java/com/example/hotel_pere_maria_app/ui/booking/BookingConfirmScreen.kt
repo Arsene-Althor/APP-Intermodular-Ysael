@@ -206,6 +206,19 @@ fun BookingConfirmScreen(navController: NavHostController, roomId: String) {
                                                 raw.ifBlank { "Error al reservar (${res.code()})" }
                                             }
                                     } else {
+                                        val created = res.body()
+                                        val rid =
+                                            created?.get("reservation_id")?.toString()?.trim().orEmpty()
+                                        if (rid.isNotEmpty()) {
+                                            try {
+                                                RetrofitClient.reservationService.confirmPayment(
+                                                    rid,
+                                                    mapOf("amount" to price.toString()),
+                                                )
+                                            } catch (_: Exception) {
+                                                // Reserva creada; factura se puede reemitir desde confirm-payment
+                                            }
+                                        }
                                         ReservationRepository.fetchReservations()
                                         navController.navigate(Routes.Reservations.route) {
                                             popUpTo(Routes.BookingHome.route) { inclusive = false }

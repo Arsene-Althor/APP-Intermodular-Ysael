@@ -1,6 +1,6 @@
 # APP Android — Hotel Pere María
 
-Cliente móvil para huéspedes del **Hotel Pere María**, desarrollado con **Kotlin** y **Jetpack Compose**. La app se conecta a la API REST del proyecto intermodular (**Retrofit** + **Gson**) y prioriza una experiencia de reserva **inspirada en portales tipo Booking**: búsqueda por fechas, huéspedes y presupuesto, resultados filtrables y flujo de confirmación sin formularios legacy.
+Cliente móvil para huéspedes del **Hotel Pere María**, desarrollado con **Kotlin** y **Jetpack Compose**. Se conecta a la API REST (**Retrofit** + **Gson**); datos en **MongoDB** solo en servidor. Incluye búsqueda tipo Booking, **P9** estadísticas, **P19** flexibilidad, **fin de estancia** (ampliar / instalaciones), ampliación de estancia, facturas PDF y perfil con foto.
 
 ---
 
@@ -11,12 +11,17 @@ Cliente móvil para huéspedes del **Hotel Pere María**, desarrollado con **Kot
 - [Tecnologías](#tecnologías)
 - [Estructura del código](#estructura-del-código)
 - [Arquitectura](#arquitectura)
+- [Base de datos MongoDB (vía API)](#base-de-datos-mongodb-vía-api)
 - [Navegación](#navegación)
 - [Conexión con la API](#conexión-con-la-api)
 - [Ejemplos de código](#ejemplos-de-código)
 - [Flujos principales](#flujos-principales)
 - [Evolución del proyecto](#evolución-del-proyecto-desde-la-creación)
-- [P19 · Flexibilidad y fidelidad (API; UI pendiente)](#p19--flexibilidad-y-fidelidad-api-ui-pendiente)
+- [P9 · Mis estadísticas (cliente)](#p9--mis-estadísticas-cliente)
+- [P9 · Mis estancias (historial)](#p9--mis-estancias-historial)
+- [P19 · Flexibilidad (cliente)](#p19--flexibilidad-cliente)
+- [Ampliación de estancia (cliente)](#ampliación-de-estancia-cliente)
+- [Facturas (HotelInvoice)](#facturas-hotelinvoice)
 
 ---
 
@@ -52,7 +57,7 @@ La interfaz actual sigue una línea **moderna, limpia y orientada a reservas**, 
 | **Fondo y superficies** | Predominio de **blanco** y grises muy suaves (`surface`, `surfaceVariant`) para legibilidad y sensación de amplitud. |
 | **Acento** | **Azul pastel** del tema Material 3 (`primary`, `primaryContainer`) para botones, enlaces, chips activos y barra superior; evita el exceso de color en pantallas densas. |
 | **Jerarquía** | Títulos claros, tarjetas con sombra ligera y mucho espacio en blanco entre bloques (motor de búsqueda, próxima reserva, resultados). |
-| **Navegación** | **Sin barra inferior fija**; acceso a inicio, reservas y perfil desde la **TopAppBar** (logo grande + iconos). Menos ruido visual y foco en la tarea (buscar → resultados → detalle). |
+| **Navegación** | Barra inferior: Inicio · Reservas · Estadísticas. **TopAppBar:** logo del hotel (`R.drawable.hotel_logo`) y **foto de perfil** del usuario (Coil + URL vía `MediaUrls`). |
 | **Detalle de habitación** | **Carrusel horizontal** de fotos con indicadores y texto guía; precio destacado con soporte para **ofertas** si la API las envía. |
 
 El archivo `ui/theme/` define la paleta (`Color.kt`, `Theme.kt`). El objetivo es **profesional y calmado**, no recargado.
@@ -98,10 +103,16 @@ com/example/hotel_pere_maria_app/
     ├── Service/
     │   ├── RetrofitClient.kt
     │   ├── ReservationService.kt   # mine, invoice, booking-receipt, audit…
+    │   ├── FlexibilityService.kt   # early/late + extend-stay
+    │   ├── LoyaltyStatsService.kt  # P9 · GET /loyalty/me
+    │   ├── UserStayService.kt      # P9 · GET /users/:id/history|stats
     │   ├── InvoicePdfHelper.kt     # descarga y apertura PDF (justificante + factura)
+    │   ├── FlexibilityNotificationHelper.kt
+    │   ├── FlexibilityPollWorker.kt
     │   ├── SessionManager.kt       # JWT + cierre sesión ante 401/403
-    │   ├── RoomService.kt
-    │   └── …
+    │   ├── MediaUrls.kt            # Base URL fotos (/uploads)
+    │   ├── SessionUi.kt            # Refresco avatar tras guardar sesión
+    │   └── RoomService.kt
     │
     ├── Navegation/
     │   ├── NavegationMain.kt
@@ -110,11 +121,16 @@ com/example/hotel_pere_maria_app/
     │
     ├── Scaffold/
     │   ├── ScaffoldMain.kt
-    │   └── TopAppBar.kt
+    │   ├── BottomBookingBar.kt     # Inicio · Reservas · Estadísticas
+    │   └── TopAppBar.kt            # Logo hotel + avatar perfil (Coil)
     │
     ├── Views/
-    │   ├── MyBookingsScreens.kt    # Mis reservas + historial (PDFs)
-    │   ├── InvoiceHistoryScreen.kt # Mis facturas
+    │   ├── MyBookingsScreens.kt    # Mis reservas + solicitudes + ampliar estancia
+    │   ├── ClientStatsScreen.kt    # P9 · estadísticas + P9InsightsCard
+    │   ├── MyStaysScreen.kt        # P9 · historial estancias
+    │   ├── StayDetailScreen.kt     # Detalle estancia pasada
+    │   ├── FlexibilityUi.kt        # diálogos early/late + ampliar (fecha/hora)
+    │   ├── InvoiceHistoryScreen.kt # Mis facturas (HotelInvoice)
     │   ├── ReservationAuditScreen.kt
     │   ├── ModReserva.kt
     │   ├── RoomDetail.kt
@@ -139,13 +155,42 @@ Los repositorios (`RoomRepository`, etc.) centralizan red y exponen `StateFlow` 
 
 ---
 
+## Base de datos MongoDB (vía API)
+
+La app **no accede** a MongoDB directamente. Todos los datos pasan por la API. Documentación completa de colecciones y relaciones: [README API — Base de datos](../API-Intermodular-Ysael/README.md#base-de-datos-mongodb-colecciones-y-relaciones).
+
+### Qué pantalla usa qué colección (indirectamente)
+
+| Pantalla Android | Colección(es) en Mongo | Uso principal |
+|------------------|-------------------------|---------------|
+| Login / registro / perfil | `users` | Cuenta, DNI, foto de perfil |
+| Búsqueda y detalle habitación | `rooms`, `extraservices` | Disponibilidad, precio, fotos, extras |
+| Mis reservas / confirmar | `reservations` | RSV activas, P19 embebido, ampliaciones |
+| Estadísticas (P9) | `clientloyaltystats`, `reservations` | Rango fidelidad, noches, gasto |
+| Mis estancias | `reservations`, `reviews` | Historial completado |
+| Mis facturas | `hotelinvoices` | PDF por tipo (estancia, P19, ampliación) |
+| Valoraciones | `reviews` | Opiniones tras estancia |
+
+### Relaciones útiles para el huésped
+
+- Tu usuario (`CLI-xxxxx`) tiene **muchas reservas** (`RSV-xxxxx`); cada reserva apunta a **una habitación** (`HAB-xxx`).
+- Las **solicitudes P19** (entrada anticipada / salida tardía) viven **dentro** del documento de reserva, no en una colección aparte.
+- Las **facturas** emitidas se guardan en **`hotelinvoices`** (puede haber más de una por la misma reserva).
+- Tu **rango de fidelidad** (bronce/plata/oro) está en **`clientloyaltystats`** (un documento por cliente); la API lo usa para auto-aprobar P19.
+
+---
+
 ## Navegación
 
 - **`NavegationMain`**: login / registro / scaffold autenticado.
 - **Destino inicial del área cliente**: `booking/home`.
-- **Rutas relevantes** (`Routes.kt`): `BookingHome`, `BookingResults`, `BookingConfirm`, `RoomDetail`, `Reservations`, `ReservationHistory`, `ReservationAudit`, `Reviews`, `User`, `ModReserva`, …
+- **Rutas relevantes** (`Routes.kt`): `BookingHome`, `BookingResults`, `BookingConfirm`, `RoomDetail`, `Reservations`, `ClientStats`, `MyStays`, `StayDetail`, `InvoiceHistory`, `ReservationHistory`, `ReservationAudit`, `Reviews`, `User`, `ModReserva`, …
 
-El **scaffold** (barra superior) se oculta en algunas pantallas a pantalla completa (`ModReserva`, auditoría, historial), igual que antes.
+**Barra inferior** (`BottomBookingBar.kt`): **Inicio** (búsqueda) · **Reservas** (Mis reservas) · **Estadísticas** (P9 fidelidad).
+
+En **Mis reservas**, chips superiores: **Facturas** · **Estancias** · **Todas** (historial completo).
+
+El **scaffold** (barra superior) se oculta en pantallas a pantalla completa (`ModReserva`, auditoría, historial de reservas/facturas).
 
 ---
 
@@ -362,8 +407,8 @@ Orden aproximado de **novedades** que se fueron incorporando; cada bloque explic
 ### 7. Estética y navegación tipo app de viajes
 
 - **Material 3** con fondo claro y acento azul pastel (`ui/theme/`).
-- **Sin bottom navigation bar**: la **TopAppBar** concentra inicio, reservas y perfil; menos ruido visual y foco en buscar y reservar.
-- **Soporte** (mapa, teléfono, correo) agrupado en **Perfil** en lugar de disperso en un home legacy.
+- **Bottom bar** de tres pestañas: Inicio, Reservas, Estadísticas; perfil desde icono superior.
+- **Soporte** (mapa, teléfono, correo) agrupado en **Perfil**.
 
 ### 8. Documentos PDF: justificante y factura fiscal
 
@@ -392,27 +437,152 @@ Dos PDF distintos, alineados con la API:
 
 ### 9. Limpieza del árbol de código
 
-- Eliminación de flujos sustituidos (p. ej. formulario `Add` antiguo, listado `RoomList` como entrada principal, barra inferior duplicada). `Home.kt` puede existir como referencia pero **no** es el destino del `NavHost` actual.
+- Eliminación de flujos sustituidos (formulario `Add` legacy, `Home.kt` fuera del `NavHost` principal).
+
+### 10. P9 · Mis estadísticas (fidelidad)
+
+- Pestaña **Estadísticas** en bottom bar → `ClientStatsScreen.kt` (`Routes.ClientStats`).
+- `GET /loyalty/me`: API agrega reservas no canceladas → guarda `ClientLoyaltyStats`.
+- UI: rango (bronce/plata/oro), noches, gasto, reservas, completadas, barra progreso, **`P9InsightsCard`** (temporada, habitación favorita, racha).
+- **Gasto/noches** incluyen reservas activas ya pagadas (pago simulado al reservar).
+
+### 11. Solicitudes check-in / check-out (P19)
+
+- En **Mis reservas**, **dos acciones separadas** (no un solo botón combinado):
+  - **Check-in anticipado** — antes del día de entrada (mismo día de `check_in`, hora &lt; 12:00).
+  - **Check-out tardío (hoy)** — solo el **día de salida** (mismo día de `check_out`, hora &gt; 11:00).
+- Diálogo corto: `TimePicker` + tarifa mínima (`Desde X €`) vía `GET /bookings/:id/flexibility`.
+- Chips de estado (pendiente / aprobada / rechazada) y notificaciones locales (`FlexibilityPollWorker`, sin FCM).
+
+### 12. Ampliación de estancia (extend-stay)
+
+- Enlace **Ampliar estancia** (flujo distinto): `DatePicker` + `TimePicker` → `PATCH /bookings/:id/extend-stay`.
+- Lista solo reservas activas (`cancelation_date` nulo, sin `superseded_by_reservation_id`).
+- Errores API reales en toast; tras éxito se refresca `GET /reservation/mine` (si cambió habitación, aparece la nueva RSV).
+
+### 13. P9 · Mis estancias e insights
+
+- `MyStaysScreen` + `StayDetailScreen` desde chip **Estancias**.
+- `P9InsightsCard` en **Estadísticas** (temporada favorita, habitación top, racha).
+
+### 14. Facturas unificadas (HotelInvoice)
+
+- `InvoiceHistoryScreen`: lista `GET /invoices?userId=`; auto `confirm-payment` para reservas activas sin factura al abrir.
+- PDF por `invoice_number` en query.
+
+### 15. Fin de estancia, ventana 12 h y barra superior (estado actual)
+
+- **`EndOfStayDecisionDialog`:** tras 11:00 el mismo día, elegir ampliar o instalaciones.
+- **Ventana 12 h** para late checkout y ampliación corta (`FlexibilityRepository`).
+- **TopAppBar:** logo `hotel_logo` + avatar perfil (Coil, `MediaUrls`); icono app `logo_app`.
 
 ---
 
-## P19 · Flexibilidad y fidelidad (API; UI pendiente)
+## P9 · Mis estadísticas (cliente)
 
-La **API** ya expone el programa de **entrada anticipada** y **salida tardía** (ver README de `API-Intermodular-Ysael`). La app Android **aún no** incluye pantallas para solicitar ni ver el estado; cuando se implemente:
+| Elemento | Detalle |
+|----------|---------|
+| **Acceso** | Bottom bar → **Estadísticas** |
+| **Pantalla** | `ClientStatsScreen.kt` |
+| **API** | `GET /loyalty/me` (recalcula y persiste en `ClientLoyaltyStats`) |
+| **Métricas** | `total_spent`, `total_nights` (todas las reservas vigentes), `completed_stays_count`, `loyalty_tier` |
+| **Actualizar** | Icono ↻ en la barra o reentrar en la pestaña |
 
-| Acción cliente | Endpoint previsto |
-|----------------|-------------------|
-| Ver rango y tarifas | `GET /reservation/{id}/flexibility` |
-| Pedir entrada antes de las 12:00 | `POST …/flexibility/early-checkin` |
-| Pedir salida después de las 11:00 | `POST …/flexibility/late-checkout` |
+**Umbrales de rango** (API, `.env` `LOYALTY_*`): por defecto plata ≥ 5 noches o 400 €; oro ≥ 15 noches o 1200 €.
 
-**Fidelidad (P9):** rango `bronze` / `silver` / `gold` en colección `ClientLoyaltyStats` → descuento sobre tarifa base (40 € entrada anticipada por defecto). Sin fila en BD → bronce (0 % descuento).
+Documentación API: [P9](../API-Intermodular-Ysael/README.md#p9--estadísticas-y-fidelidad-del-cliente).
 
-**Relación con otros módulos:**
+---
 
-- Tras **aprobar** una solicitud, la API actualiza `check_in` o `check_out` y suma `final_fee` al `price` (mostrar precio actualizado en gestionar reserva).
-- Distinto del **check-in en recepción** (`reception_check_in_at`), que registra la llegada física del huésped en mostrador.
+## P19 · Flexibilidad (cliente)
 
-Documentación completa de contrato JSON, estados `pending` / `approved` / `rejected` y variables `.env` `FLEX_*`: [API — P19](../API-Intermodular-Ysael/README.md#p19--flexibilidad-entrada-anticipada--salida-tardía).
+Programa de fidelidad (código interno **P19**; la UI **no** muestra esa etiqueta): entrar **antes de las 12:00** o salir **después de las 11:00** el **mismo día** de entrada/salida de la reserva.
+
+### Plazo de 12 horas (día de salida)
+
+Tras la **hora estándar de salida (11:00)**, el cliente solo puede solicitar **salida tardía** o **ampliación corta** (&lt; 24 h) durante **`client_flex_request_window_hours`** (por defecto **12 h**, configurable en API / `operationalsettings`). Pasado ese plazo, los botones dejan de mostrarse. Recepción (WPF) no tiene este límite.
+
+Lógica en `FlexibilityRepository.kt`: `standardCheckoutCalendar()`, `isWithinClientFlexRequestWindow()`.
+
+### Fin de estancia (mismo día, tras las 11:00)
+
+Si la reserva está activa y toca elegir opción, aparece **`EndOfStayDecisionDialog`**:
+
+| Opción | Acción |
+|--------|--------|
+| **Ampliar estancia** | `ExtendStayDateDialog` → `PATCH …/extend-stay` |
+| **Seguir en instalaciones** | Salida tardía con `mode: "facilities"` (sin ocupar habitación; hasta ~20:00 según API) |
+| **Cerrar** | Dismiss del diálogo |
+
+En **Mis reservas** (`MyBookingsScreens.kt` + `FlexibilityUi.kt`):
+
+| Función | Descripción |
+|---------|-------------|
+| Check-in anticipado | `OutlinedButton` → `FlexibilityRequestDialog` (EARLY) |
+| Check-out tardío | `OutlinedButton` «(hoy)» solo si `isCheckOutDayToday()` y dentro de ventana 12 h |
+| Estado | Chips: pendiente / aprobada / rechazada + hora solicitada |
+| Notificaciones | Locales (`FlexibilityNotificationHelper`); poll 15 min (`FlexibilityPollWorker`) |
+
+| Acción | Endpoint |
+|--------|----------|
+| Preview tarifa y rango | `GET /bookings/{id}/flexibility` |
+| Solicitar entrada | `PATCH /bookings/{id}/request-early-checkin` |
+| Solicitar salida | `PATCH /bookings/{id}/request-late-checkout` |
+| Estado en tarjeta | Campos en `GET /reservation/mine` |
+
+- **Plata/oro:** aprobación automática si la habitación está libre en la franja.
+- **Bronce:** `pending` hasta que recepción aprueba en WPF.
+- **Suplemento:** horas × €/h (config API), descuento por rango; factura `HotelInvoice` si `final_fee > 0`.
+- **No es** check-in en mostrador (`reception_check_in_at`) ni **ampliar estancia** (otro día / noches).
+
+**Archivos:** `FlexibilityService.kt`, `FlexibilityRepository.kt`, `FlexibilityModels.kt`, `FlexibilityUi.kt`, `FlexibilityNotificationHelper.kt`, `FlexibilityPollWorker.kt`.
+
+[API — P19](../API-Intermodular-Ysael/README.md#p19--flexibilidad-entrada-anticipada--salida-tardía) · [WPF — recepción](../WPF-Intermodular-Ysael/README.md#p19--flexibilidad-recepción).
+
+---
+
+## Ampliación de estancia (cliente)
+
+Para **prolongar la salida** más allá del mismo día P19 (noches extra o salida con otra fecha/hora):
+
+| UI | API |
+|----|-----|
+| **Ampliar estancia** en tarjeta activa | `PATCH /bookings/{id}/extend-stay` con `new_check_out` (fecha o ISO con hora) |
+
+- &lt; 24 h: tarifa horaria; ≥ 1 día: precio por noches.
+- Tras las **11:00** del día de salida, ampliación corta solo dentro de la **ventana de 12 h** (misma regla que salida tardía).
+- Si la habitación no está libre → nueva RSV; la anterior queda con `superseded_by_reservation_id` (no cancelada).
+- Filtro cliente: `Reservation.isActiveForClient()` (`FlexibilityRepository.kt`).
+
+`ExtendStayDateDialog` en `FlexibilityUi.kt` · `FlexibilityRepository.extendStay`.
+
+[API — extend-stay](../API-Intermodular-Ysael/README.md#ampliación-de-estancia-extend-stay).
+
+---
+
+## P9 · Mis estancias (historial)
+
+| Pantalla | Ruta nav | API |
+|----------|----------|-----|
+| **Mis estancias** | `MyStays` (chip desde Mis reservas) | `GET /users/{userId}/history` |
+| **Detalle estancia** | `StayDetail/{reservationId}` | Datos del ítem de historial |
+
+Muestra estancias pasadas/completadas con habitación y valoración si existe.
+
+---
+
+## Facturas (HotelInvoice)
+
+**Mis facturas** (`InvoiceHistoryScreen.kt`):
+
+| Comportamiento | Detalle |
+|----------------|---------|
+| Listado | `GET /invoices?userId=` → `HotelInvoiceItem` (tipo, importe, `invoice_number`) |
+| Auto-emisión | Al abrir, `confirm-payment` en reservas activas sin factura |
+| PDF | `InvoicePdfHelper` + `?invoice_number=` si hay varias por reserva |
+
+Tipos posibles en lista: estancia, check-in anticipado, salida tardía, ampliación.
+
+[API — HotelInvoice](../API-Intermodular-Ysael/README.md#colección-hotelinvoice-facturación-multi-concepto).
 
 ---

@@ -77,4 +77,16 @@ object RetrofitClient {
     val reviewService: ReviewService by lazy {
         retrofit.create(ReviewService::class.java)
     }
+
+    val flexibilityService: FlexibilityService by lazy {
+        retrofit.create(FlexibilityService::class.java)
+    }
+
+    val loyaltyStatsService: LoyaltyStatsService by lazy {
+        retrofit.create(LoyaltyStatsService::class.java)
+    }
+
+    val userStayService: UserStayService by lazy {
+        retrofit.create(UserStayService::class.java)
+    }
 }

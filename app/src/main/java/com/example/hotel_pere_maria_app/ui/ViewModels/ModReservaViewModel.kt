@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.hotel_pere_maria_app.ui.Models.BookingHistoryFriendlyMapper
 import com.example.hotel_pere_maria_app.ui.Models.ReservationRepository
 import com.example.hotel_pere_maria_app.ui.Service.RetrofitClient
+import com.example.hotel_pere_maria_app.ui.Service.parseApiError
 import com.example.hotel_pere_maria_app.ui.Service.SessionManager
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -134,7 +135,7 @@ class ModReservaViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
                     _uiState.update { it.copy(precioCancel = precioCanc,showResumenCancel = show) }
                 }else{
                     val respuError = response.errorBody()?.string()
-                    _uiState.update { it.copy(mensajeRespuesta = "${respuError}", errorRespusta = true) }
+                    _uiState.update { it.copy(mensajeRespuesta = parseApiError(respuError), errorRespusta = true) }
                 }
             }catch (e: Exception){
                 _uiState.update { it.copy(mensajeRespuesta = "Fallo de conexión. Revisa tu internet.", errorRespusta = true) }
@@ -159,7 +160,7 @@ class ModReservaViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
                 }else{
                     val respuError = response.errorBody()?.string()
                     cargarDatos()
-                    _uiState.update { it.copy(mensajeRespuesta = "${respuError}", errorRespusta = true) }
+                    _uiState.update { it.copy(mensajeRespuesta = parseApiError(respuError), errorRespusta = true) }
                 }
             }catch (e: Exception){
                 cargarDatos()
@@ -188,8 +189,7 @@ class ModReservaViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
                     _uiState.update { it.copy(mensajeRespuesta = "¡Reserva modificada con exito!", errorRespusta = false) }
                 }else{
                     val respuError = response.errorBody()?.string()
-                    println("Error en petición: ${respuError}")
-                    _uiState.update { it.copy(mensajeRespuesta = "${respuError}", errorRespusta = true) }
+                    _uiState.update { it.copy(mensajeRespuesta = parseApiError(respuError), errorRespusta = true) }
                 }
             }catch (e: Exception){
                 _uiState.update { it.copy(mensajeRespuesta = "Fallo de conexión. Revisa tu internet.", errorRespusta = true) }

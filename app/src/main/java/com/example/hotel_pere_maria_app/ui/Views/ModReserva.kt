@@ -63,7 +63,6 @@ fun ModReserva(snackbarHostState : SnackbarHostState, reservaId: String, onBack:
     val state by ModViewModel.uiState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var receiptBusy by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.mensajeRespuesta) {
         state.mensajeRespuesta?.let {
@@ -121,52 +120,6 @@ fun ModReserva(snackbarHostState : SnackbarHostState, reservaId: String, onBack:
                     cargando = state.historialCargando,
                     items = state.historialItems,
                 )
-
-                Text(
-                    text = "Justificante de reserva (PDF, no fiscal). La factura con IVA se emite en recepción al checkout.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (receiptBusy) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(28.dp))
-                    }
-                } else {
-                    OutlinedButton(
-                        onClick = {
-                            receiptBusy = true
-                            scope.launch {
-                                try {
-                                    when (
-                                        val res =
-                                            InvoicePdfHelper.downloadAndOpenBookingReceipt(context, reservaId)
-                                    ) {
-                                        is InvoicePdfHelper.Result.Error ->
-                                            Toast.makeText(context, res.message, Toast.LENGTH_LONG).show()
-
-                                        InvoicePdfHelper.Result.NoPdfViewer ->
-                                            Toast.makeText(
-                                                context,
-                                                "No hay visor de PDF instalado",
-                                                Toast.LENGTH_LONG,
-                                            ).show()
-
-                                        InvoicePdfHelper.Result.Ok -> {}
-                                    }
-                                } finally {
-                                    receiptBusy = false
-                                }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("Descargar justificante (PDF)")
-                    }
-                }
 
                 HorizontalDivider(thickness = 1.dp, color = Color.LightGray.copy(alpha = 0.5f))
 
@@ -255,7 +208,7 @@ fun ModReserva(snackbarHostState : SnackbarHostState, reservaId: String, onBack:
                     shape = RoundedCornerShape(12.dp),
                     enabled = state.check_in.isNotEmpty() && state.check_out.isNotEmpty() && state.room.isNotEmpty()
                 ) {
-                    Text(text = "CONTINUAR AL PAGO", fontWeight = FontWeight.Bold)
+                    Text(text = "GUARDAR CAMBIOS", fontWeight = FontWeight.Bold)
                 }
 
                 Button(

@@ -28,7 +28,14 @@ interface ReservationService{
     suspend fun getPrice(@Body datos : Map<String, String>): Response<Map<String, Any>>
 
     @POST("reservation/add")
-    suspend fun addReservation(@Body datos: Map<String, String>): Response<Map<String, String>>
+    suspend fun addReservation(@Body datos: Map<String, String>): Response<Map<String, Any>>
+
+    /** Tras pago simulado: emite factura fiscal de la reserva. */
+    @POST("reservation/{reservation_id}/confirm-payment")
+    suspend fun confirmPayment(
+        @Path("reservation_id") reservationId: String,
+        @Body body: Map<String, String> = emptyMap(),
+    ): Response<Map<String, Any>>
 
     @DELETE("reservation/cancel/{reservation_id}")
     suspend fun cancelReservation(
@@ -47,6 +54,7 @@ interface ReservationService{
     @GET("reservation/{reservation_id}/invoice")
     suspend fun downloadInvoicePdf(
         @Path("reservation_id") reservationId: String,
+        @Query("invoice_number") invoiceNumber: String? = null,
     ): Response<ResponseBody>
 
     /** Justificante de reserva / pago simulado (PDF no fiscal). Siempre que seas dueño o personal. */

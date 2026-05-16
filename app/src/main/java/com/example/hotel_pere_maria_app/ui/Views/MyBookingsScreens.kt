@@ -1,9 +1,15 @@
 package com.example.hotel_pere_maria_app.ui.Views
 
+import android.Manifest
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -30,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,14 +45,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.hotel_pere_maria_app.ui.Models.LoyaltyFeedback
+import com.example.hotel_pere_maria_app.ui.Models.FlexibilityKind
+import com.example.hotel_pere_maria_app.ui.Models.FlexibilityRepository
 import com.example.hotel_pere_maria_app.ui.Models.Reservation
 import com.example.hotel_pere_maria_app.ui.Models.ReservationRepository
+import com.example.hotel_pere_maria_app.ui.Models.FlexibilityStatusResponse
+import com.example.hotel_pere_maria_app.ui.Models.isActiveForClient
+import com.example.hotel_pere_maria_app.ui.Models.needsEndOfStayChoice
+import com.example.hotel_pere_maria_app.ui.Models.feeQuote
+import com.example.hotel_pere_maria_app.ui.Models.formatFeePreviewLine
+import com.example.hotel_pere_maria_app.ui.Service.FlexibilityPollWorker
 import com.example.hotel_pere_maria_app.ui.Navegation.Routes
 import com.example.hotel_pere_maria_app.ui.Service.InvoicePdfHelper
 import java.text.SimpleDateFormat
@@ -54,6 +74,19 @@ import kotlinx.coroutines.launch
 
 private fun Reservation.tieneFactura(): Boolean = !invoice_number.isNullOrBlank()
 
+private data class FlexPaymentPending(
+    val reserva: Reservation,
+    val kind: FlexibilityKind,
+    val hour: Int,
+    val minute: Int,
+    val amountEur: Double?,
+)
+
+private data class ExtendPaymentPending(
+    val reserva: Reservation,
+    val newCheckOutIso: String,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyBookingsScreen(navController: NavController) {
@@ -62,43 +95,69 @@ fun MyBookingsScreen(navController: NavController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pdfInvoiceBusyFor by remember { mutableStateOf<String?>(null) }
-    var pdfReceiptBusyFor by remember { mutableStateOf<String?>(null) }
+    var flexDialog by remember { mutableStateOf<Pair<Reservation, FlexibilityKind>?>(null) }
+    var flexSubmitBusy by remember { mutableStateOf(false) }
+    var extendDialog by remember { mutableStateOf<Reservation?>(null) }
+    var extendBusy by remember { mutableStateOf(false) }
+    var flexPreview by remember { mutableStateOf<FlexibilityStatusResponse?>(null) }
+    var flexPreviewLoading by remember { mutableStateOf(false) }
+    var flexPayment by remember { mutableStateOf<FlexPaymentPending?>(null) }
+    var extendPayment by remember { mutableStateOf<ExtendPaymentPending?>(null) }
+    var endOfStayFor by remember { mutableStateOf<Reservation?>(null) }
+    val endOfStayDismissed = remember { mutableStateOf(setOf<String>()) }
+
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        FlexibilityPollWorker.schedule(context)
         ReservationRepository.fetchReservations()
     }
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    scope.launch {
+                        ReservationRepository.fetchReservations()
+                        FlexibilityPollWorker.runOnce(context)
+                    }
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(reservas) {
+        if (reservas.isNotEmpty()) {
+            com.example.hotel_pere_maria_app.ui.Service.FlexibilityNotificationHelper.checkStatusChanges(
+                context,
+                reservas,
+            )
+        }
+    }
+
     val activas =
-        reservas.filter { it.cancelation_date == null }.sortedBy { it.check_in }
+        reservas.filter { it.isActiveForClient() }.sortedBy { it.check_in }
+
+    LaunchedEffect(activas.map { it.reservation_id to it.check_out.time }) {
+        val candidate =
+            activas.firstOrNull { r ->
+                r.needsEndOfStayChoice() && r.reservation_id !in endOfStayDismissed.value
+            }
+        if (candidate != null && endOfStayFor == null) {
+            endOfStayFor = candidate
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Mis reservas") },
-                actions = {
-                    TextButton(
-                        onClick = { navController.navigate(Routes.InvoiceHistory.route) },
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Icon(Icons.Default.ReceiptLong, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text("Mis facturas")
-                        }
-                    }
-                    TextButton(
-                        onClick = { navController.navigate(Routes.ReservationHistory.route) },
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text("Historial")
-                        }
-                    }
-                },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -114,11 +173,32 @@ fun MyBookingsScreen(navController: NavController) {
                     .padding(padding)
                     .padding(horizontal = 16.dp),
         ) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AssistChip(
+                    onClick = { navController.navigate(Routes.InvoiceHistory.route) },
+                    label = { Text("Facturas") },
+                )
+                AssistChip(
+                    onClick = { navController.navigate(Routes.MyStays.route) },
+                    label = { Text("Estancias") },
+                )
+                AssistChip(
+                    onClick = { navController.navigate(Routes.ReservationHistory.route) },
+                    label = { Text("Todas") },
+                )
+            }
             Text(
-                text = "Reservas activas (no canceladas). Pulsa una para modificar o cancelar.",
-                style = MaterialTheme.typography.bodyMedium,
+                text = "Toca una reserva para gestionarla.",
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 12.dp),
+                modifier = Modifier.padding(bottom = 8.dp),
             )
 
             if (activas.isEmpty()) {
@@ -137,37 +217,11 @@ fun MyBookingsScreen(navController: NavController) {
                             reserva = r,
                             fmt = fmt,
                             invoiceDownloading = pdfInvoiceBusyFor == r.reservation_id,
-                            receiptDownloading = pdfReceiptBusyFor == r.reservation_id,
                             onOpen = {
                                 navController.navigate("${Routes.ModReserva.route}/${r.reservation_id}")
                             },
                             onHistorial = {
                                 navController.navigate(Routes.ReservationAudit.createRoute(r.reservation_id))
-                            },
-                            onDescargarJustificante = {
-                                pdfReceiptBusyFor = r.reservation_id
-                                scope.launch {
-                                    try {
-                                        when (
-                                            val res =
-                                                InvoicePdfHelper.downloadAndOpenBookingReceipt(context, r.reservation_id)
-                                        ) {
-                                            is InvoicePdfHelper.Result.Error ->
-                                                Toast.makeText(context, res.message, Toast.LENGTH_LONG).show()
-
-                                            InvoicePdfHelper.Result.NoPdfViewer ->
-                                                Toast.makeText(
-                                                    context,
-                                                    "No hay visor de PDF instalado",
-                                                    Toast.LENGTH_LONG,
-                                                ).show()
-
-                                            InvoicePdfHelper.Result.Ok -> {}
-                                        }
-                                    } finally {
-                                        pdfReceiptBusyFor = null
-                                    }
-                                }
                             },
                             onDescargarFactura = {
                                 pdfInvoiceBusyFor = r.reservation_id
@@ -183,7 +237,7 @@ fun MyBookingsScreen(navController: NavController) {
                                             InvoicePdfHelper.Result.NoPdfViewer ->
                                                 Toast.makeText(
                                                     context,
-                                                    "No hay visor de PDF instalado",
+                                                    "Instala un visor de PDF",
                                                     Toast.LENGTH_LONG,
                                                 ).show()
 
@@ -194,11 +248,171 @@ fun MyBookingsScreen(navController: NavController) {
                                     }
                                 }
                             },
+                            onVerFacturas = { navController.navigate(Routes.InvoiceHistory.route) },
+                            onRequestEarly = { flexDialog = r to FlexibilityKind.EARLY },
+                            onChooseEndOfStay = {
+                                endOfStayDismissed.value =
+                                    endOfStayDismissed.value - r.reservation_id
+                                endOfStayFor = null
+                                endOfStayFor = r
+                            },
                         )
                     }
                 }
             }
         }
+    }
+
+    extendDialog?.let { reserva ->
+        ExtendStayDateDialog(
+            reservationId = reserva.reservation_id,
+            currentCheckOut = reserva.check_out,
+            busy = extendBusy,
+            onDismiss = { if (!extendBusy) extendDialog = null },
+            onConfirm = { iso ->
+                extendPayment = ExtendPaymentPending(reserva, iso)
+                extendDialog = null
+            },
+        )
+    }
+
+    extendPayment?.let { pending ->
+        SimulatedPaymentBottomSheet(
+            title = "Confirmar ampliación",
+            subtitle = "${pending.reserva.reservation_id} · nueva salida",
+            amountEur = null,
+            busy = extendBusy,
+            onDismiss = { if (!extendBusy) extendPayment = null },
+            onConfirm = {
+                extendBusy = true
+                scope.launch {
+                    try {
+                        FlexibilityRepository.extendStay(
+                            pending.reserva.reservation_id,
+                            pending.newCheckOutIso,
+                        ).fold(
+                            onSuccess = { msg ->
+                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                extendPayment = null
+                                LoyaltyFeedback.toastAfterAction(context)
+                            },
+                            onFailure = { e ->
+                                Toast.makeText(
+                                    context,
+                                    e.message ?: "Error al ampliar estancia",
+                                    Toast.LENGTH_LONG,
+                                ).show()
+                            },
+                        )
+                    } finally {
+                        extendBusy = false
+                        ReservationRepository.fetchReservations()
+                    }
+                }
+            },
+        )
+    }
+
+    LaunchedEffect(flexDialog?.first?.reservation_id, flexDialog?.second) {
+        val pair = flexDialog ?: run {
+            flexPreview = null
+            return@LaunchedEffect
+        }
+        flexPreviewLoading = true
+        flexPreview =
+            FlexibilityRepository.getStatus(pair.first.reservation_id).getOrNull()
+        flexPreviewLoading = false
+    }
+
+    flexDialog?.let { (reserva, kind) ->
+        val tier = flexPreview?.loyalty_tier ?: reserva.early_checkin_requested?.loyalty_tier
+        val feeLine = formatFeePreviewLine(kind.feeQuote(flexPreview))
+        FlexibilityRequestDialog(
+            kind = kind,
+            reservationId = reserva.reservation_id,
+            loyaltyTier = tier,
+            feePreviewText = feeLine,
+            loadingPreview = flexPreviewLoading,
+            busy = flexSubmitBusy,
+            onDismiss = {
+                if (!flexSubmitBusy) {
+                    flexDialog = null
+                    flexPreview = null
+                }
+            },
+            onConfirm = { hour, minute ->
+                val quote = kind.feeQuote(flexPreview)
+                val amount =
+                    when {
+                        quote?.free_access == true -> 0.0
+                        else -> quote?.final_fee
+                    }
+                flexPayment =
+                    FlexPaymentPending(reserva, kind, hour, minute, amount)
+                flexDialog = null
+                flexPreview = null
+            },
+        )
+    }
+
+    flexPayment?.let { pending ->
+        val titulo =
+            when (pending.kind) {
+                FlexibilityKind.EARLY -> "Check-in anticipado"
+                FlexibilityKind.LATE_FACILITIES -> "Instalaciones hasta 20:00"
+                else -> "Salida tardía"
+            }
+        SimulatedPaymentBottomSheet(
+            title = titulo,
+            subtitle = "${pending.reserva.reservation_id} · ${pending.hour}:${"%02d".format(pending.minute)}",
+            amountEur = pending.amountEur,
+            busy = flexSubmitBusy,
+            onDismiss = { if (!flexSubmitBusy) flexPayment = null },
+            onConfirm = {
+                flexSubmitBusy = true
+                scope.launch {
+                    try {
+                        FlexibilityRepository.submitRequest(
+                            pending.reserva,
+                            pending.kind,
+                            pending.hour,
+                            pending.minute,
+                        ).fold(
+                            onSuccess = { msg ->
+                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                flexPayment = null
+                                LoyaltyFeedback.toastAfterAction(context)
+                            },
+                            onFailure = { e ->
+                                Toast.makeText(context, e.message ?: "Error", Toast.LENGTH_LONG).show()
+                            },
+                        )
+                    } finally {
+                        flexSubmitBusy = false
+                    }
+                }
+            },
+        )
+    }
+
+    endOfStayFor?.let { reserva ->
+        val checkOutFmt = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        EndOfStayDecisionDialog(
+            reservationId = reserva.reservation_id,
+            checkOutFormatted = checkOutFmt.format(reserva.check_out),
+            onDismiss = {
+                endOfStayDismissed.value = endOfStayDismissed.value + reserva.reservation_id
+                endOfStayFor = null
+            },
+            onExtendStay = {
+                endOfStayFor = null
+                extendDialog = reserva
+            },
+            onFacilitiesCheckout = {
+                endOfStayFor = null
+                flexDialog = reserva to FlexibilityKind.LATE_FACILITIES
+            },
+        )
     }
 }
 
@@ -207,11 +421,12 @@ private fun ActiveBookingCard(
     reserva: Reservation,
     fmt: SimpleDateFormat,
     invoiceDownloading: Boolean,
-    receiptDownloading: Boolean,
     onOpen: () -> Unit,
     onHistorial: () -> Unit,
-    onDescargarJustificante: () -> Unit,
+    onRequestEarly: () -> Unit,
+    onChooseEndOfStay: () -> Unit,
     onDescargarFactura: () -> Unit,
+    onVerFacturas: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -244,47 +459,36 @@ private fun ActiveBookingCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = "Justificante: PDF no fiscal (pago simulado en la app).",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (receiptDownloading) {
-                Row(
+            Spacer(modifier = Modifier.height(8.dp))
+            FlexibilityStatusSection(reserva = reserva)
+            Spacer(modifier = Modifier.height(8.dp))
+            FlexibilityEarlyCheckInButton(reserva = reserva, onEarly = onRequestEarly)
+            if (reserva.needsEndOfStayChoice()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Button(
+                    onClick = onChooseEndOfStay,
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    colors =
+                        androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        ),
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                    Text("Descargando justificante…", style = MaterialTheme.typography.bodySmall)
-                }
-            } else {
-                TextButton(onClick = onDescargarJustificante, modifier = Modifier.fillMaxWidth()) {
-                    Text("Descargar justificante (PDF)")
+                    Text("Hora de salida cumplida — elegir opción")
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
             if (reserva.tieneFactura()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = "Factura fiscal: ${reserva.invoice_number}",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.tertiary,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
                 if (invoiceDownloading) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                        Text("Descargando factura…", style = MaterialTheme.typography.bodySmall)
-                    }
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                 } else {
                     TextButton(onClick = onDescargarFactura, modifier = Modifier.fillMaxWidth()) {
-                        Text("Descargar factura fiscal (PDF)")
+                        Text("Descargar factura (PDF)")
                     }
+                }
+            } else {
+                TextButton(onClick = onVerFacturas, modifier = Modifier.fillMaxWidth()) {
+                    Text("Ver mis facturas")
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -343,7 +547,7 @@ fun ReservationHistoryScreen(navController: NavController) {
         ) {
             item {
                 Text(
-                    text = "Todas tus reservas. Justificante (pago simulado) en PDF siempre; factura fiscal solo tras checkout en recepción.",
+                    text = "Listado de todas tus reservas.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 12.dp),

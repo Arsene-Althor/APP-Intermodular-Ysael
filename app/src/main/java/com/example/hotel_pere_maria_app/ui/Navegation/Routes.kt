@@ -19,11 +19,18 @@ sealed class Routes(val route: String) {
     object Reviews : Routes("Reviews")
     /** Reservas activas + acceso a historial. */
     object Reservations : Routes("Reservations")
+    /** P9 · Estadísticas y rango de fidelidad del cliente. */
+    object ClientStats : Routes("ClientStats")
     /** Lista de reservas con factura (GET /invoices?userId=). */
     object InvoiceHistory : Routes("InvoiceHistory")
 
     /** Lista completa de reservas (pasadas y canceladas). */
     object ReservationHistory : Routes("ReservationHistory")
+    /** P9 · Mis estancias completadas (GET /users/:id/history). */
+    object MyStays : Routes("MyStays")
+    object StayDetail : Routes("StayDetail/{reservationId}") {
+        fun createRoute(reservationId: String) = "StayDetail/$reservationId"
+    }
     /** Historial amigable de auditoría de una reserva. */
     object ReservationAudit : Routes("ReservationAudit/{reservationId}") {
         fun createRoute(reservationId: String) = "ReservationAudit/$reservationId"

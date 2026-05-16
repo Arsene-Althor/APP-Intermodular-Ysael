@@ -56,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.hotel_pere_maria_app.ui.Service.MediaUrls
 import com.example.hotel_pere_maria_app.ui.ViewModels.ProfileState
 import com.example.hotel_pere_maria_app.ui.ViewModels.ProfileViewModel
 
@@ -104,16 +105,8 @@ fun Profile(onLogout: () -> Unit, onOpenMyReviews: () -> Unit = {}, viewModel: P
                                                         ),
                                         contentAlignment = Alignment.Center
                                 ) {
-                                        if (uiState.profileImage != null) {
-                                                val imageUrl =
-                                                        if (uiState.profileImage!!.startsWith(
-                                                                        "http"
-                                                                )
-                                                        ) {
-                                                                uiState.profileImage
-                                                        } else {
-                                                                "http://51.255.198.93:3000/${uiState.profileImage}"
-                                                        }
+                                        val imageUrl = MediaUrls.profileImage(uiState.profileImage)
+                                        if (imageUrl != null) {
                                                 AsyncImage(
                                                         model = imageUrl,
                                                         contentDescription = "Foto de perfil",

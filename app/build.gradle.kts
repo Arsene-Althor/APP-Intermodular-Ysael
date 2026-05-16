@@ -97,4 +97,5 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:5.3.2")
     //Dependencias para carga de imágenes
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
 }

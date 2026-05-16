@@ -29,6 +29,8 @@ fun ScaffoldMain(onLogout: () -> Unit = {}) {
             currentRoute.startsWith(Routes.ModReserva.route) -> false
             currentRoute.startsWith("ReservationAudit") -> false
             currentRoute == Routes.ReservationHistory.route -> false
+            currentRoute == Routes.MyStays.route -> false
+            currentRoute.startsWith("StayDetail") -> false
             currentRoute == Routes.InvoiceHistory.route -> false
             else -> true
         }

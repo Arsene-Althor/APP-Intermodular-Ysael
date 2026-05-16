@@ -88,6 +88,7 @@ object SessionManager {
         return try {
             userToken = t
             userInfo = gson.fromJson(json, UserInfo::class.java)
+            SessionUi.bumpUserInfo()
             true
         } catch (_: Exception) {
             clear()
@@ -102,6 +103,7 @@ object SessionManager {
         userToken?.let { ed.putString(KEY_TOKEN, it) } ?: ed.remove(KEY_TOKEN)
         userInfo?.let { ed.putString(KEY_USER_JSON, gson.toJson(it)) } ?: ed.remove(KEY_USER_JSON)
         ed.apply()
+        SessionUi.bumpUserInfo()
     }
 
     /** Cierra sesión: borra memoria y preferencias. */
@@ -109,5 +111,8 @@ object SessionManager {
         userToken = null
         userInfo = null
         prefs?.edit()?.remove(KEY_TOKEN)?.remove(KEY_USER_JSON)?.apply()
+        com.example.hotel_pere_maria_app.HotelApplication.appContext?.let {
+            com.example.hotel_pere_maria_app.ui.Service.FlexibilityPollWorker.cancel(it)
+        }
     }
 }

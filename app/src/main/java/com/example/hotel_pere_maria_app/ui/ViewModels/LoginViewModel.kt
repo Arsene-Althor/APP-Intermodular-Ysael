@@ -62,6 +62,9 @@ class LoginViewModel() : ViewModel() {
                     SessionManager.userToken = loginBody.token
                     SessionManager.userInfo = loginBody.user
                     SessionManager.saveSession()
+                    com.example.hotel_pere_maria_app.HotelApplication.appContext?.let {
+                        com.example.hotel_pere_maria_app.ui.Service.FlexibilityPollWorker.schedule(it)
+                    }
 
                     _uiState.update {
                         it.copy(loginStatus = LoginState.Success(loginBody.token))

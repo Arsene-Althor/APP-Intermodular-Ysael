@@ -24,10 +24,12 @@ object InvoicePdfHelper {
     suspend fun downloadAndOpenPdf(
         context: Context,
         reservationId: String,
+        invoiceNumber: String? = null,
     ): Result =
         withContext(Dispatchers.IO) {
             try {
-                val response = RetrofitClient.reservationService.downloadInvoicePdf(reservationId)
+                val response =
+                    RetrofitClient.reservationService.downloadInvoicePdf(reservationId, invoiceNumber)
                 if (!response.isSuccessful) {
                     val errBody = response.errorBody()?.string()?.take(500)
                     return@withContext Result.Error(errBody ?: "Error HTTP ${response.code()}")
@@ -41,7 +43,8 @@ object InvoicePdfHelper {
                     return@withContext Result.Error("La respuesta no parece un PDF")
                 }
                 val dir = File(context.cacheDir, "invoices").apply { mkdirs() }
-                val safeId = reservationId.replace(Regex("[^A-Za-z0-9_-]"), "_")
+                val safeId =
+                    (invoiceNumber ?: reservationId).replace(Regex("[^A-Za-z0-9_-]"), "_")
                 val file = File(dir, "Factura-$safeId.pdf")
                 file.writeBytes(bytes)
 

@@ -16,9 +16,12 @@ import com.example.hotel_pere_maria_app.ui.Views.Profile
 import com.example.hotel_pere_maria_app.ui.Views.Register
 import com.example.hotel_pere_maria_app.ui.Service.SessionManager
 import com.example.hotel_pere_maria_app.ui.Views.InvoiceHistoryScreen
+import com.example.hotel_pere_maria_app.ui.Views.ClientStatsScreen
 import com.example.hotel_pere_maria_app.ui.Views.MyBookingsScreen
 import com.example.hotel_pere_maria_app.ui.Views.ReservationAuditScreen
+import com.example.hotel_pere_maria_app.ui.Views.MyStaysScreen
 import com.example.hotel_pere_maria_app.ui.Views.ReservationHistoryScreen
+import com.example.hotel_pere_maria_app.ui.Views.StayDetailScreen
 import com.example.hotel_pere_maria_app.ui.Views.ReviewsScreen
 import com.example.hotel_pere_maria_app.ui.Views.RoomDetail
 import com.example.hotel_pere_maria_app.ui.booking.BookingConfirmScreen
@@ -115,6 +118,16 @@ fun NavigationScaffold(
         }
         composable(Routes.Reservations.route) {
             MyBookingsScreen(navController = navigationController)
+        }
+        composable(Routes.ClientStats.route) {
+            ClientStatsScreen()
+        }
+        composable(Routes.MyStays.route) {
+            MyStaysScreen(navController = navigationController)
+        }
+        composable(Routes.StayDetail.route) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("reservationId") ?: ""
+            StayDetailScreen(navController = navigationController, reservationId = id)
         }
         composable(Routes.ReservationHistory.route) {
             ReservationHistoryScreen(navController = navigationController)
