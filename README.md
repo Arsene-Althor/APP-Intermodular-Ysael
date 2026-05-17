@@ -2,15 +2,19 @@
 
 Cliente móvil para huéspedes del **Hotel Pere María**, desarrollado con **Kotlin** y **Jetpack Compose**. Se conecta a la API REST (**Retrofit** + **Gson**); datos en **MongoDB** solo en servidor. Incluye búsqueda tipo Booking, **P9** estadísticas, **P19** flexibilidad, **fin de estancia** (ampliar / instalaciones), ampliación de estancia, facturas PDF y perfil con foto.
 
+API y base de datos: [README API](../API-Intermodular-Ysael/README.md).
+
 ---
 
 ## Tabla de contenidos
 
+- [Arquitectura del sistema](#arquitectura-del-sistema)
+- [Diagramas y flujos visuales](#diagramas-y-flujos-visuales)
 - [Requisitos y configuración](#requisitos-y-configuración)
 - [Identidad visual (UX)](#identidad-visual-ux)
 - [Tecnologías](#tecnologías)
 - [Estructura del código](#estructura-del-código)
-- [Arquitectura](#arquitectura)
+- [Patrón en capas (detalle)](#patrón-en-capas-detalle)
 - [Base de datos MongoDB (vía API)](#base-de-datos-mongodb-vía-api)
 - [Navegación](#navegación)
 - [Conexión con la API](#conexión-con-la-api)
@@ -45,6 +49,137 @@ hotel.api.base.url=http://192.168.x.x:3011/
 | Dispositivo físico | `http://<IP_del_PC>:3011/` |
 
 Tras cambiar la URL, **recompilar** la app para regenerar `BuildConfig`.
+
+---
+
+## Arquitectura del sistema
+
+```mermaid
+flowchart TB
+    subgraph app["APP Android"]
+        UI[Compose Screens]
+        VM[ViewModels]
+        REPO[data/repository]
+        NET[core/network Retrofit]
+    end
+  API[API :3011]
+  DB[(MongoDB)]
+
+  UI --> VM --> REPO --> NET --> API --> DB
+```
+
+---
+
+## Diagramas y flujos visuales
+
+### Mapa de navegación
+
+```mermaid
+flowchart TD
+    subgraph auth["Sin sesión"]
+        L[Login]
+        REG[Register]
+        FP[ForgotPassword]
+    end
+    subgraph main["Autenticado · AppNavGraph"]
+        BH[booking/home]
+        BR[booking/results]
+        RD[RoomDetail]
+        BC[booking/confirm]
+        RES[Reservations]
+        CS[ClientStats]
+        PROF[User / Profile]
+    end
+    L --> BH
+    BH --> BR --> RD --> BC
+    RES --> INV[InvoiceHistory]
+    RES --> ST[MyStays]
+    RES --> HIST[ReservationHistory]
+    RES --> AUD[ReservationAudit]
+    RES --> MOD[ModReserva]
+```
+
+### Embudo de reserva (tipo Booking)
+
+```mermaid
+sequenceDiagram
+    participant U as Huésped
+    participant H as BookingHome
+    participant R as Results
+    participant D as RoomDetail
+    participant C as Confirm
+    participant API as API
+
+    U->>H: fechas + huéspedes + precio
+    H->>API: GET room/available
+    API-->>R: habitaciones
+    U->>D: ver fotos / reseñas
+    U->>C: confirmar
+    C->>API: POST getPrice + add
+    Note over U: justificante PDF disponible
+```
+
+### Fin de estancia y P19 (día de salida)
+
+```mermaid
+flowchart TD
+    T11[11:00 salida estándar] --> D{¿Reserva activa?}
+    D -->|Sí| E[EndOfStayDecisionDialog]
+    E --> AM[Ampliar estancia]
+    E --> INS[Instalaciones hasta ~20:00]
+    D -->|En ventana 12h| L[Late checkout habitación]
+    L --> P{Plata/Oro + hueco?}
+    P -->|Sí| OK[Auto-aprobado]
+    P -->|Bronce| W[WPF aprueba]
+```
+
+### Jerarquía de paquetes (código)
+
+```mermaid
+mindmap
+  root((hotel_pere_maria_app))
+    core
+      navigation
+      network
+      session
+      util
+    data
+      model
+      repository
+    feature
+      auth
+      booking
+      reservation
+      flexibility
+      loyalty
+      invoice
+      profile
+      review
+      room
+    ui
+      theme
+      Scaffold
+      Components
+```
+
+### Ejemplo de tarjeta «Mis reservas»
+
+```
+┌─────────────────────────────────────┐
+│  RSV-00042 · HAB-101                │
+│  Entrada 18/05 · Salida 21/05       │
+│  [Check-in anticipado] [Salida hoy] │
+│  Estado: ● Aprobada  14:00          │
+│  [Justificante] [Factura] [Actividad]│
+└─────────────────────────────────────┘
+         │
+         ▼ (tras 11:00, ventana 12 h)
+┌─────────────────────────────────────┐
+│  ¿Qué quieres hacer?                │
+│  [ Ampliar estancia ]               │
+│  [ Seguir en instalaciones ]      │
+└─────────────────────────────────────┘
+```
 
 ---
 
@@ -114,7 +249,9 @@ Código legacy (`ui/Views/Home.kt`, paquete plano `ui/Models`) eliminado. Reorga
 
 ---
 
-## Arquitectura
+## Patrón en capas (detalle)
+
+Diagramas: [Arquitectura del sistema](#arquitectura-del-sistema) · [Navegación y embudo](#diagramas-y-flujos-visuales).
 
 ```
 Pantalla (Compose) → ViewModel (opcional) → Repository / Service (Retrofit) → API
@@ -150,6 +287,8 @@ La app **no accede** a MongoDB directamente. Todos los datos pasan por la API. D
 ---
 
 ## Navegación
+
+Mapa visual en [Diagramas y flujos visuales](#diagramas-y-flujos-visuales) (grafo `AppNavGraph` + embudo reserva).
 
 - **`NavegationMain`**: login / registro / scaffold autenticado.
 - **Destino inicial del área cliente**: `booking/home`.
@@ -327,6 +466,8 @@ HorizontalPager(
 ---
 
 ## Flujos principales
+
+Diagramas detallados en [Diagramas y flujos visuales](#diagramas-y-flujos-visuales).
 
 1. **Inicio** (`BookingHomeScreen`): el usuario elige fechas, ajusta personas y rango de precio; opcionalmente ve su **próxima reserva**.
 2. **Resultados** (`BookingResultsScreen`): lista desde `GET /room/available`; orden por valoración; filtro de precio usando `displayPricePerNight()`; chips de **servicios extra** según catálogo (todos los seleccionados deben estar en la habitación).
