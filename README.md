@@ -85,63 +85,32 @@ Ruta base: `app/src/main/java/com/example/hotel_pere_maria_app/`
 ```
 com/example/hotel_pere_maria_app/
 ├── HotelApplication.kt
+├── MainActivity.kt
+├── core/
+│   ├── navigation/          # Routes, AppNavHost, AppNavGraph
+│   ├── network/             # RetrofitClient + *Service (API)
+│   ├── session/             # SessionManager, ThemeManager
+│   └── util/                # MediaUrls, ApiMessages, InvoicePdfHelper
+├── data/
+│   ├── model/               # DTOs (Reservation, Room, Flexibility…)
+│   └── repository/          # RoomRepository, ReservationRepository, …
+├── feature/
+│   ├── auth/                # Login, registro, recuperar contraseña
+│   ├── booking/             # Búsqueda tipo Booking + BookingHomeViewModel
+│   ├── reservation/         # Mis reservas, modificar, auditoría amigable
+│   ├── flexibility/         # P19 UI, workers, notificaciones
+│   ├── loyalty/             # Estadísticas + Mis estancias
+│   ├── invoice/             # Mis facturas
+│   ├── profile/             # Perfil y foto
+│   ├── review/              # Mis reseñas
+│   └── room/                # Detalle habitación
 └── ui/
-    ├── MainActivity.kt
-    │
-    ├── booking/                     # Flujo “tipo Booking”
-    │   ├── BookingHomeScreen.kt
-    │   ├── BookingResultsScreen.kt
-    │   ├── BookingConfirmScreen.kt
-    │   └── BookingSearchSession.kt
-    │
-    ├── Models/
-    │   ├── Room.kt
-    │   ├── ExtraService.kt
-    │   ├── RoomRepository.kt
-    │   └── …
-    │
-    ├── Service/
-    │   ├── RetrofitClient.kt
-    │   ├── ReservationService.kt   # mine, invoice, booking-receipt, audit…
-    │   ├── FlexibilityService.kt   # early/late + extend-stay
-    │   ├── LoyaltyStatsService.kt  # P9 · GET /loyalty/me
-    │   ├── UserStayService.kt      # P9 · GET /users/:id/history|stats
-    │   ├── InvoicePdfHelper.kt     # descarga y apertura PDF (justificante + factura)
-    │   ├── FlexibilityNotificationHelper.kt
-    │   ├── FlexibilityPollWorker.kt
-    │   ├── SessionManager.kt       # JWT + cierre sesión ante 401/403
-    │   ├── MediaUrls.kt            # Base URL fotos (/uploads)
-    │   ├── SessionUi.kt            # Refresco avatar tras guardar sesión
-    │   └── RoomService.kt
-    │
-    ├── Navegation/
-    │   ├── NavegationMain.kt
-    │   ├── Navegation.kt
-    │   └── Routes.kt
-    │
-    ├── Scaffold/
-    │   ├── ScaffoldMain.kt
-    │   ├── BottomBookingBar.kt     # Inicio · Reservas · Estadísticas
-    │   └── TopAppBar.kt            # Logo hotel + avatar perfil (Coil)
-    │
-    ├── Views/
-    │   ├── MyBookingsScreens.kt    # Mis reservas + solicitudes + ampliar estancia
-    │   ├── ClientStatsScreen.kt    # P9 · estadísticas + P9InsightsCard
-    │   ├── MyStaysScreen.kt        # P9 · historial estancias
-    │   ├── StayDetailScreen.kt     # Detalle estancia pasada
-    │   ├── FlexibilityUi.kt        # diálogos early/late + ampliar (fecha/hora)
-    │   ├── InvoiceHistoryScreen.kt # Mis facturas (HotelInvoice)
-    │   ├── ReservationAuditScreen.kt
-    │   ├── ModReserva.kt
-    │   ├── RoomDetail.kt
-    │   ├── Profile.kt
-    │   └── …
-    │
-    ├── ViewModels/
-    │   └── …
-    │
-    └── theme/
+    ├── theme/               # Material 3
+    ├── Scaffold/            # TopAppBar, bottom bar, shell
+    └── Components/          # FechaInputSimple (DateInputs.kt)
 ```
+
+Código legacy (`ui/Views/Home.kt`, paquete plano `ui/Models`) eliminado. Reorganización: `scripts/reorganize-packages.ps1`.
 
 ---
 
@@ -475,6 +444,11 @@ Dos PDF distintos, alineados con la API:
 - **`EndOfStayDecisionDialog`:** tras 11:00 el mismo día, elegir ampliar o instalaciones.
 - **Ventana 12 h** para late checkout y ampliación corta (`FlexibilityRepository`).
 - **TopAppBar:** logo `hotel_logo` + avatar perfil (Coil, `MediaUrls`); icono app `logo_app`.
+
+### 16. Reorganización de paquetes Kotlin
+
+- Estructura **core / data / feature / ui** (ver [Estructura del código](#estructura-del-código)).
+- Eliminados `Home.kt` (sustituido por `BookingHomeScreen`) y `Navitems.kt` vacío.
 
 ---
 

@@ -1,9 +1,9 @@
-package com.example.hotel_pere_maria_app
+﻿package com.example.hotel_pere_maria_app
 
 import android.app.Application
-import com.example.hotel_pere_maria_app.ui.Service.FlexibilityNotificationHelper
-import com.example.hotel_pere_maria_app.ui.Service.FlexibilityPollWorker
-import com.example.hotel_pere_maria_app.ui.Service.SessionManager
+import com.example.hotel_pere_maria_app.feature.flexibility.FlexibilityNotificationHelper
+import com.example.hotel_pere_maria_app.feature.flexibility.FlexibilityPollWorker
+import com.example.hotel_pere_maria_app.core.session.SessionManager
 
 class HotelApplication : Application() {
     override fun onCreate() {
@@ -22,3 +22,4 @@ class HotelApplication : Application() {
             private set
     }
 }
+

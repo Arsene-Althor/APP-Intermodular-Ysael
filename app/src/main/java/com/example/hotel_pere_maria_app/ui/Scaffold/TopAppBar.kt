@@ -1,4 +1,4 @@
-package com.example.hotel_pere_maria_app.ui.Scaffold
+﻿package com.example.hotel_pere_maria_app.ui.Scaffold
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -37,11 +37,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.AsyncImage
 import com.example.hotel_pere_maria_app.R
-import com.example.hotel_pere_maria_app.ui.Navegation.Routes
-import com.example.hotel_pere_maria_app.ui.Navegation.navigateToBookingHome
-import com.example.hotel_pere_maria_app.ui.Service.MediaUrls
-import com.example.hotel_pere_maria_app.ui.Service.SessionManager
-import com.example.hotel_pere_maria_app.ui.Service.SessionUi
+import com.example.hotel_pere_maria_app.core.navigation.Routes
+import com.example.hotel_pere_maria_app.core.navigation.navigateToBookingHome
+import com.example.hotel_pere_maria_app.core.util.MediaUrls
+import com.example.hotel_pere_maria_app.core.session.SessionManager
+import com.example.hotel_pere_maria_app.core.session.SessionUi
 
 /**
  * Barra superior: logo del hotel ([R.drawable.hotel_logo]), título centrado, foto de perfil.
@@ -137,3 +137,4 @@ private fun TopBarProfileAvatar(imageUrl: String?) {
         }
     }
 }
+

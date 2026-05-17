@@ -1,4 +1,4 @@
-package com.example.ui.theme
+﻿package com.example.hotel_pere_maria_app.ui.theme
 import androidx.compose.ui.graphics.Color
 
 /** Tema claro: blanco + azul pastel (accesos, chips, barra). */
@@ -217,10 +217,4 @@ val surfaceContainerLowDarkHighContrast = Color(0xFF1A2120)
 val surfaceContainerDarkHighContrast = Color(0xFF2B3231)
 val surfaceContainerHighDarkHighContrast = Color(0xFF363D3C)
 val surfaceContainerHighestDarkHighContrast = Color(0xFF414847)
-
-
-
-
-
-
 

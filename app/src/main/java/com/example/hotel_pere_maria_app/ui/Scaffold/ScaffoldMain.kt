@@ -1,4 +1,4 @@
-package com.example.hotel_pere_maria_app.ui.Scaffold
+﻿package com.example.hotel_pere_maria_app.ui.Scaffold
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.hotel_pere_maria_app.ui.Navegation.NavigationScaffold
-import com.example.hotel_pere_maria_app.ui.Navegation.Routes
+import com.example.hotel_pere_maria_app.core.navigation.NavigationScaffold
+import com.example.hotel_pere_maria_app.core.navigation.Routes
 
 @Composable
 fun ScaffoldMain(onLogout: () -> Unit = {}) {
@@ -53,3 +53,4 @@ fun ScaffoldMain(onLogout: () -> Unit = {}) {
         NavigationScaffold(ScaffoldnavController, modifier = Modifier.padding(pading), snackbarHostState,onLogout = onLogout )
     }
 }
+

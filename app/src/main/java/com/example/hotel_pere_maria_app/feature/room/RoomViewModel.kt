@@ -1,0 +1,179 @@
+﻿package com.example.hotel_pere_maria_app.feature.room
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.hotel_pere_maria_app.data.model.Room
+import com.example.hotel_pere_maria_app.data.repository.RoomRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
+
+/**
+ * ViewModel para gestionar el estado de las habitaciones
+ * Maneja la lógica de negocio, filtrado y comunicación con el repositorio
+ */
+class RoomViewModel : ViewModel() {
+
+    // Estado de las habitaciones desde el repositorio
+    private val _allRooms = RoomRepository.rooms
+    val isLoading: StateFlow<Boolean> = RoomRepository.isLoading
+    val error: StateFlow<String?> = RoomRepository.error
+
+    // Filtros
+    private val _selectedType = MutableStateFlow("Todos")
+    val selectedType: StateFlow<String> = _selectedType
+
+    private val _selectedAvailability = MutableStateFlow<Boolean?>(null)
+    val selectedAvailability: StateFlow<Boolean?> = _selectedAvailability
+
+    // Lista filtrada de habitaciones
+    private val _filteredRooms = MutableStateFlow<List<Room>>(emptyList())
+    val filteredRooms: StateFlow<List<Room>> = _filteredRooms
+
+    // Habitaciones disponibles para fechas específicas (usada en el diálogo de reserva)
+    val availableRooms: StateFlow<List<Room>> = RoomRepository.availableRooms
+    val availableLoading: StateFlow<Boolean> = RoomRepository.availableLoading
+    val availableError: StateFlow<String?> = RoomRepository.availableError
+
+    // Habitación seleccionada para ver detalles
+    private val _selectedRoom = MutableStateFlow<Room?>(null)
+    val selectedRoom: StateFlow<Room?> = _selectedRoom
+
+    // Estado de carga y error exclusivos del detalle
+    private val _isLoadingDetail = MutableStateFlow(false)
+    val isLoadingDetail: StateFlow<Boolean> = _isLoadingDetail
+
+    private val _detailError = MutableStateFlow<String?>(null)
+    val detailError: StateFlow<String?> = _detailError
+
+    init {
+        // Combinar filtros y aplicarlos automáticamente cuando cambien
+        viewModelScope.launch {
+            combine(
+                _allRooms,
+                _selectedType,
+                _selectedAvailability
+            ) { rooms, type, availability ->
+                filterRooms(rooms, type, availability)
+            }.collect { filtered ->
+                _filteredRooms.value = filtered
+            }
+        }
+    }
+
+    /**
+     * Carga las habitaciones desde la API
+     */
+    fun loadRooms() {
+        viewModelScope.launch {
+            RoomRepository.fetchRooms()
+        }
+    }
+
+    /**
+     * Filtra las habitaciones según los criterios seleccionados
+     */
+    private fun filterRooms(
+        rooms: List<Room>,
+        type: String,
+        availability: Boolean?
+    ): List<Room> {
+        // Cliente: nunca mostrar habitaciones marcadas fuera de servicio (ya filtradas en repo; refuerzo).
+        var filtered = rooms.filter { it.isOperational }
+
+        if (type != "Todos") {
+            filtered = filtered.filter { it.type.equals(type, ignoreCase = true) }
+        }
+
+        availability?.let { wantFree ->
+            filtered =
+                if (wantFree) {
+                    filtered.filter { !it.isOccupiedNow }
+                } else {
+                    filtered.filter { it.isOccupiedNow }
+                }
+        }
+
+        return filtered
+    }
+
+    /**
+     * Cambia el filtro de tipo de habitación
+     */
+    fun setTypeFilter(type: String) {
+        _selectedType.value = type
+    }
+
+    /**
+     * Cambia el filtro de disponibilidad
+     */
+    fun setAvailabilityFilter(available: Boolean?) {
+        _selectedAvailability.value = available
+    }
+
+    /**
+     * Resetea todos los filtros
+     */
+    fun clearFilters() {
+        _selectedType.value = "Todos"
+        _selectedAvailability.value = null
+    }
+
+    /**
+     * Carga una habitación específica por ID para ver detalles
+     */
+    fun loadRoomDetails(roomId: String) {
+        viewModelScope.launch {
+            _isLoadingDetail.value = true
+            _detailError.value = null
+            _selectedRoom.value = null
+            try {
+                val room = RoomRepository.getRoomById(roomId)
+                if (room != null) {
+                    _selectedRoom.value = room
+                } else {
+                    _detailError.value = "No se encontró la habitación"
+                }
+            } catch (e: Exception) {
+                _detailError.value = "Error al cargar: ${e.message}"
+            } finally {
+                _isLoadingDetail.value = false
+            }
+        }
+    }
+
+    /**
+     * Limpia la habitación seleccionada
+     */
+    fun clearSelectedRoom() {
+        _selectedRoom.value = null
+    }
+
+    /**
+     * Limpia el mensaje de error
+     */
+    fun clearError() {
+        RoomRepository.clearError()
+        RoomRepository.clearAvailableError()
+    }
+
+    /**
+     * Carga habitaciones disponibles para un rango de fechas específico
+     * @param checkIn Fecha de check-in (formato: dd/MM/yyyy)
+     * @param checkOut Fecha de check-out (formato: dd/MM/yyyy)
+     */
+    fun loadAvailableRoomsByDates(checkIn: String, checkOut: String, guests: Int = 2) {
+        viewModelScope.launch {
+            RoomRepository.fetchAvailableRoomsByDates(checkIn, checkOut, guests)
+        }
+    }
+
+    /**
+     * Obtiene los tipos de habitación disponibles para los filtros
+     */
+    fun getRoomTypes(): List<String> {
+        return listOf("Todos", "Individual", "Doble", "Suite")
+    }
+}
+

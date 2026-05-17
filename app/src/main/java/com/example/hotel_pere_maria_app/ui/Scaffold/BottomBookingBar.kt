@@ -1,4 +1,4 @@
-package com.example.hotel_pere_maria_app.ui.Scaffold
+﻿package com.example.hotel_pere_maria_app.ui.Scaffold
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,8 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.hotel_pere_maria_app.ui.Navegation.Routes
-import com.example.hotel_pere_maria_app.ui.Navegation.navigateToBookingHome
+import com.example.hotel_pere_maria_app.core.navigation.Routes
+import com.example.hotel_pere_maria_app.core.navigation.navigateToBookingHome
 
 @Composable
 fun BottomBookingBar(navController: NavHostController, currentRoute: String?) {
@@ -95,3 +95,4 @@ private fun RowScope.BottomTab(
         Text(text = label, style = MaterialTheme.typography.labelSmall, color = tint, maxLines = 1)
     }
 }
+
