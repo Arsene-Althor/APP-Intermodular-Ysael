@@ -1,168 +1,150 @@
-# Android — Novedades (Proyecto Individual)
+# Android — Propuestas P11, P5, P9 y P19
 
-Extensión de la app intermodular (Kotlin + Compose + Retrofit). Login, registro, perfil, reservas clásicas y reseñas están en la memoria del módulo; **este README solo documenta lo añadido después**.
-
-API: [README API](../API-Intermodular-Ysael/README.md)
+Implementación móvil (Kotlin + Jetpack Compose) de las cuatro propuestas del Proyecto Individual. API: [README API](../API-Intermodular-Ysael/README.md). URL base: `BuildConfig.API_BASE_URL` en `app/build.gradle.kts`.
 
 ---
 
-## Resumen vs memoria intermodular
+## P11 · Auditoría (historial simplificado para el cliente)
 
-| Antes (memoria) | Añadido en app individual |
-|-----------------|---------------------------|
-| Home con contacto + lista reservas | Flujo **Booking** (búsqueda → resultados → detalle → confirmar) |
-| `Room` simple, `RoomRepository` básico | Galería, ofertas, extras, filtros por servicio |
-| Sin PDF | Justificante + factura fiscal |
-| Sin fidelidad | **P9** Estadísticas + Mis estancias |
-| Sin flex horaria | **P19** check-in anticipado / salida tardía + fin de estancia |
-| Paquetes planos | **core / data / feature / ui** |
+El huésped **no** ve JSON ni snapshots técnicos: solo mensajes legibles derivados del campo `action` del log.
+
+### Mapeo de acciones
+
+`data/model/BookingHistoryFriendlyMapper.kt`:
+
+| `action` (API) | Mensaje en app |
+|----------------|----------------|
+| `CREATED` | Reserva creada |
+| `UPDATED` | Cambios en tu reserva |
+| `CANCELED` | Reserva cancelada |
+| Otros / futuros | Actividad en tu reserva (también preparado: pago, check-in, servicio extra) |
+
+### Dónde se muestra
+
+| Pantalla | Ruta nav | API |
+|----------|----------|-----|
+| **Actividad** | `ReservationAudit/{reservationId}` | `GET /reservation/{id}/audit` |
+| **Gestionar reserva** | `ModReserva` | Misma API; sección `HistorialReservaSection` |
+
+**ViewModels:** `ReservationAuditViewModel`, `ModReservaViewModel` — listan `HistorialItemUi` (fecha + mensaje amigable).
+
+**Acceso:** en **Mis reservas**, botón **Actividad** en cada tarjeta.
 
 ---
 
-## Arquitectura (paquetes nuevos)
+## P5 · Factura en PDF descargable
+
+La **factura fiscal** exige checkout en recepción (`invoice_number` en la reserva). Hasta entonces el huésped puede usar el justificante si la app lo ofrece en flujos de pago simulado; la propuesta P5 se centra en la factura completa post-checkout.
+
+### Mis reservas
+
+| Elemento | Implementación |
+|----------|----------------|
+| Botón | **Descargar factura** — visible si `reservation.tieneFactura()` (`invoice_number != null`) |
+| API | `GET /reservation/{id}/invoice` (`@Streaming`) |
+| Apertura | `InvoicePdfHelper.downloadAndOpenPdf` → caché en dispositivo + visor PDF del sistema (`FileProvider`) |
+
+También disponible en **Gestionar reserva** (`ModReservaScreen`) e **Historial de reservas**.
+
+### Historial personal de facturas
+
+| Pantalla | Ruta | API |
+|----------|------|-----|
+| **Mis facturas** | `InvoiceHistory` | `GET /invoices?userId=` |
+
+- Lista de facturas emitidas (`HotelInvoice`).
+- **Ver PDF** por fila (query `invoice_number` si aplica).
+- Al abrir la pantalla puede llamarse `confirm-payment` en reservas activas sin factura (emisión tras pago simulado).
+
+**Archivos:** `feature/invoice/InvoiceHistoryScreen.kt`, `core/util/InvoicePdfHelper.kt`, `core/network/ReservationService.kt`.
+
+---
+
+## P9 · Historial de estancias y estadísticas personales
+
+### Mis estancias
+
+| Elemento | Implementación |
+|----------|----------------|
+| Acceso | **Mis reservas** → chip **Estancias** |
+| Pantalla | `feature/loyalty/MyStaysScreen.kt` — ruta `MyStays` |
+| API | `GET /users/{userId}/history` |
+| UI | Lista cronológica: foto habitación (Coil), fechas, precio, estado |
+| Detalle | `StayDetailScreen` — datos de la estancia + valoración si la API la devuelve |
+
+Filtros en API (`?year=`, `?room_type=`, `?status=`, paginación) disponibles para futuras mejoras de UI; la pantalla actual consume el listado paginado por defecto.
+
+### Mis estadísticas
+
+| Elemento | Implementación |
+|----------|----------------|
+| Acceso | Barra inferior → **Estadísticas** |
+| Pantalla | `feature/loyalty/ClientStatsScreen.kt` — ruta `ClientStats` |
+| API | `GET /loyalty/me` |
+| UI | Tarjetas: rango fidelidad (bronce/plata/oro), total noches, total gastado, reservas completadas, barra de progreso hacia siguiente nivel |
+| Insights | `P9InsightsCard` — temporada favorita, habitación más usada, racha (campos enriquecidos tras recálculo en API) |
+
+**Repositorio / red:** `LoyaltyService` o equivalente en `core/network/`.
+
+---
+
+## P19 · Check-in anticipado y check-out tardío
+
+### Mis reservas — solicitud y estado
+
+| Elemento | Implementación |
+|----------|----------------|
+| Botones | **Check-in anticipado** y **Check-out tardío (hoy)** — `FlexibilityUi.kt` |
+| Selector | `FlexibilityRequestDialog` con `TimePicker` + tarifa mínima (`GET /bookings/{id}/flexibility`) |
+| API solicitud | `PATCH /bookings/{id}/request-early-checkin` · `PATCH /bookings/{id}/request-late-checkout` |
+| Estado | `FlexibilityStatusSection` — chips de color: pendiente / aprobada / rechazada + hora |
+| Fin de estancia | `EndOfStayDecisionDialog` el día de salida (opciones relacionadas con ampliación / instalaciones; fuera del alcance estricto de P19 pero en el mismo flujo de salida) |
+
+### Notificaciones
+
+| Propuesta | Implementación real |
+|-----------|---------------------|
+| Push FCM | **No** — notificaciones **locales** en el dispositivo |
+| Mecanismo | `FlexibilityPollWorker` (cada ~15 min) + `FlexibilityNotificationHelper` comparan estado anterior/nuevo de `GET /reservation/mine` |
+| Email | Lo envía el **servidor** al aprobar/rechazar (SMTP), no la app |
+
+Cuando recepción procesa una solicitud en WPF, el cliente ve el cambio de chip en la app y puede recibir la notificación local y/o el correo del hotel.
+
+### Archivos P19
 
 ```
-core/          navigation, network, session, util (MediaUrls, InvoicePdfHelper)
-data/          model, repository
-feature/       booking, flexibility, loyalty, invoice, reservation (ampliado)
-ui/            theme Material 3, Scaffold, Components
+feature/flexibility/
+  FlexibilityUi.kt
+  FlexibilityRepository.kt
+  FlexibilityService.kt (Retrofit)
+  FlexibilityModels.kt
+  FlexibilityNotificationHelper.kt
+  FlexibilityPollWorker.kt
+feature/reservation/MyBookingsScreens.kt  ← integración en tarjetas
 ```
 
-Legacy eliminado: `ui/Views/Home.kt`, formulario `Add` antiguo.
+---
+
+## Navegación relacionada con las propuestas
+
+| Ruta (`Routes.kt`) | Propuesta |
+|--------------------|-----------|
+| `Reservations` | P5, P11, P19 — Mis reservas |
+| `ReservationAudit/{id}` | P11 |
+| `ModReserva` | P5, P11 |
+| `InvoiceHistory` | P5 |
+| `MyStays` · `StayDetail/{id}` | P9 |
+| `ClientStats` | P9 |
+
+Barra inferior: **Reservas** · **Estadísticas** (P9).
 
 ---
 
 ## Configuración
 
-`app/build.gradle.kts` → `BuildConfig.API_BASE_URL`  
-Override opcional en `local.properties`:
-
 ```properties
+# local.properties (opcional)
 hotel.api.base.url=http://10.0.2.2:3011/
 ```
 
----
-
-## Flujo Booking (sustituye reserva por diálogo)
-
-```mermaid
-flowchart LR
-    H[BookingHome] --> R[BookingResults]
-    R --> D[RoomDetail]
-    D --> C[BookingConfirm]
-    C --> API[POST add + getPrice]
-```
-
-- `BookingSearchSession`: fechas, huéspedes, rango precio compartidos
-- `GET /room/available` con fechas ISO y filtro chips **servicios extra**
-- `Room.displayPricePerNight()`, `galleryImageUrls()` — oferta y galería API
-- Bottom bar: **Inicio** · **Reservas** · **Estadísticas**
-
----
-
-## P9 · Fidelidad y estancias
-
-| Pantalla | Ruta | API |
-|----------|------|-----|
-| Estadísticas | `ClientStats` | `GET /loyalty/me` |
-| Mis estancias | `MyStays` | `GET /users/{id}/history` |
-| Detalle | `StayDetail/{id}` | Ítem de historial |
-
-`P9InsightsCard`: temporada favorita, habitación top, racha.
-
----
-
-## P19 · Flexibilidad (cliente)
-
-| UI | API |
-|----|-----|
-| Check-in anticipado | `PATCH /bookings/{id}/request-early-checkin` |
-| Check-out tardío (hoy) | `PATCH /bookings/{id}/request-late-checkout` |
-| Preview tarifa | `GET /bookings/{id}/flexibility` |
-| Instalaciones (fin estancia) | `late_mode: facilities` |
-
-- **Ventana 12 h** tras 11:00 del día de salida (`FlexibilityRepository`)
-- `EndOfStayDecisionDialog`: ampliar vs instalaciones
-- Notificaciones locales: `FlexibilityPollWorker`, `FlexibilityNotificationHelper`
-- Chips estado en tarjetas Mis reservas
-
-Plata/oro: auto-aprobación; bronce: pendiente en WPF.
-
----
-
-## Ampliación de estancia
-
-- `ExtendStayDateDialog` → `PATCH /bookings/{id}/extend-stay`
-- Lista activa: sin `cancelation_date` ni `superseded_by_reservation_id`
-- Tras éxito: refresco `GET /reservation/mine`
-
----
-
-## PDF y facturas
-
-| Documento | Endpoint | UI |
-|-----------|----------|-----|
-| Justificante | `GET …/booking-receipt` | Mis reservas, historial, ModReserva, facturas pendientes |
-| Factura fiscal | `GET …/invoice` | Solo si `invoice_number` |
-| Listado | `GET /invoices?userId=` | `InvoiceHistoryScreen` + `confirm-payment` auto |
-
-`InvoicePdfHelper` + `FileProvider`.
-
----
-
-## Otras pantallas nuevas
-
-| Pantalla | Función |
-|----------|---------|
-| `ReservationAudit` | Historial amigable (`BookingHistoryFriendlyMapper`) |
-| `ReservationHistory` | Todas las reservas (incl. canceladas) |
-| `InvoiceHistory` | `HotelInvoice` multi-tipo |
-| `RoomDetail` | Carrusel `HorizontalPager` + indicadores |
-
----
-
-## Modelo `Room` (campos nuevos)
-
-`images`, `extraServices`, `offerActive`, `offerPercent`, `effectivePricePerNight`, `is_operational`, `is_occupied_now` — ver `data/model/Room.kt`.
-
----
-
-## Archivos clave (novedades)
-
-```
-feature/booking/       BookingHomeScreen, BookingResultsScreen, BookingConfirmScreen
-feature/flexibility/   FlexibilityUi, FlexibilityRepository, workers
-feature/loyalty/       ClientStatsScreen, MyStaysScreen, P9InsightsCard
-feature/invoice/       InvoiceHistoryScreen
-feature/reservation/   ReservationAuditScreen, MyBookingsScreens (ampliado)
-core/util/             InvoicePdfHelper, MediaUrls
-data/repository/       FlexibilityRepository, RoomRepository (available + extras)
-```
-
----
-
-## Navegación (rutas nuevas principales)
-
-`Routes.kt`: `BookingHome`, `BookingResults`, `BookingConfirm`, `ClientStats`, `MyStays`, `InvoiceHistory`, `ReservationHistory`, `ReservationAudit`, …
-
-Destino inicial autenticado: **`booking/home`** (no Home legacy).
-
----
-
-## Endpoints que consume Android (por pantalla)
-
-Detalle completo en [API — Endpoints nuevos](../API-Intermodular-Ysael/README.md#endpoints-nuevos-detalle).
-
-| Pantalla / flujo | Endpoints | Para qué los usa la app |
-|------------------|-----------|-------------------------|
-| **BookingHome / Results** | `GET /room/available`, `GET /room/extra-services` | Motor de búsqueda: fechas, huéspedes, filtro por servicios extra y precio mostrado con oferta. |
-| **RoomDetail / Confirm** | `GET /room/one`, `POST /reservation/getPrice`, `POST /reservation/add` | Detalle con galería; calcular total y crear reserva (pago simulado después). |
-| **Mis reservas** | `GET /reservation/mine`, `PATCH /bookings/…/request-*` | Solo RSV activas; botones P19 y diálogo fin de estancia. |
-| **Confirmar pago** | `POST /reservation/:id/confirm-payment` | Emite primera factura en `HotelInvoice` tras simular pago. |
-| **PDF** | `GET …/booking-receipt`, `GET …/invoice?invoice_number=` | Justificante siempre; factura fiscal si recepción hizo checkout. |
-| **Mis facturas** | `GET /invoices?userId=` | Listado multi-tipo; abre PDF por número de factura. |
-| **Estadísticas (P9)** | `GET /loyalty/me` | Rango, noches, gasto, progreso e insights en pantalla dedicada. |
-| **Mis estancias** | `GET /users/:id/history` | Historial de estancias completadas (no confundir con `/mine`). |
-| **Ampliar estancia** | `PATCH /bookings/:id/extend-stay` | Prolongar salida; refresca `/mine` si cambia habitación. |
-| **Flexibilidad** | `GET /bookings/:id/flexibility`, `PATCH request-early-checkin`, `PATCH request-late-checkout` | Preview de tarifa, solicitar horas extra el mismo día. |
-| **Actividad / auditoría** | `GET /reservation/:id/audit` | Textos amigables del historial de cambios de una reserva. |
+Emulador: `10.0.2.2` apunta al PC host. Dispositivo físico: IP LAN del PC con la API.
