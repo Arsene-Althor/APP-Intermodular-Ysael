@@ -2,6 +2,27 @@
 
 Implementación móvil (Kotlin + Jetpack Compose) de las cuatro propuestas del Proyecto Individual. API: [README API](../API-Intermodular-Ysael/README.md). URL base: `BuildConfig.API_BASE_URL` en `app/build.gradle.kts`.
 
+Modelos Mongo y flujo en servidor: [API — Modelos MongoDB](../API-Intermodular-Ysael/README.md#modelos-mongodb-colecciones-nuevas).
+
+---
+
+## Colecciones que usa Android (vía API)
+
+La app solo habla con la REST API. Las colecciones nuevas se reflejan así:
+
+| Colección | Pantalla | Comportamiento en el móvil |
+|-----------|----------|----------------------------|
+| `booking_audit_log` | Actividad / ModReserva | `GET /reservation/{id}/audit` → mensajes amigables (sin JSON de estado). |
+| `hotelinvoices` | Mis facturas | `GET /invoices?userId=` → lista y descarga PDF por `invoice_number`. |
+| `reservations` | Mis reservas | Factura fiscal si `invoice_number` relleno (checkout en WPF). |
+| `clientloyaltystats` | Estadísticas | `GET /loyalty/me` → rango, noches, gasto (documento recalculado en servidor). |
+| `reservations` + `rooms` + `reviews` | Mis estancias | `GET /users/{id}/history` — no lee `clientloyaltystats` para el listado. |
+| `flexibilitysettings` + `clientloyaltystats` | Mis reservas (P19) | El servidor aplica reglas al solicitar early/late; la app solo envía hora y muestra estado en la tarjeta. |
+| `operationalsettings` | Mis reservas (día salida) | Ventana 12 h: el servidor rechaza o oculta botones si expiró el plazo. |
+| `reservations` (subdocs P19) | Chips pendiente/aprobada/rechazada | Estado leído de `GET /reservation/mine`. |
+
+`extraservices` e `invoicesettings` no tienen pantalla propia en Android; afectan al PDF generado en servidor (P5).
+
 ---
 
 ## P11 · Auditoría (historial simplificado para el cliente)
