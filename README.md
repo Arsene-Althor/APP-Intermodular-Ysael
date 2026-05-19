@@ -146,3 +146,23 @@ data/repository/       FlexibilityRepository, RoomRepository (available + extras
 `Routes.kt`: `BookingHome`, `BookingResults`, `BookingConfirm`, `ClientStats`, `MyStays`, `InvoiceHistory`, `ReservationHistory`, `ReservationAudit`, …
 
 Destino inicial autenticado: **`booking/home`** (no Home legacy).
+
+---
+
+## Endpoints que consume Android (por pantalla)
+
+Detalle completo en [API — Endpoints nuevos](../API-Intermodular-Ysael/README.md#endpoints-nuevos-detalle).
+
+| Pantalla / flujo | Endpoints | Para qué los usa la app |
+|------------------|-----------|-------------------------|
+| **BookingHome / Results** | `GET /room/available`, `GET /room/extra-services` | Motor de búsqueda: fechas, huéspedes, filtro por servicios extra y precio mostrado con oferta. |
+| **RoomDetail / Confirm** | `GET /room/one`, `POST /reservation/getPrice`, `POST /reservation/add` | Detalle con galería; calcular total y crear reserva (pago simulado después). |
+| **Mis reservas** | `GET /reservation/mine`, `PATCH /bookings/…/request-*` | Solo RSV activas; botones P19 y diálogo fin de estancia. |
+| **Confirmar pago** | `POST /reservation/:id/confirm-payment` | Emite primera factura en `HotelInvoice` tras simular pago. |
+| **PDF** | `GET …/booking-receipt`, `GET …/invoice?invoice_number=` | Justificante siempre; factura fiscal si recepción hizo checkout. |
+| **Mis facturas** | `GET /invoices?userId=` | Listado multi-tipo; abre PDF por número de factura. |
+| **Estadísticas (P9)** | `GET /loyalty/me` | Rango, noches, gasto, progreso e insights en pantalla dedicada. |
+| **Mis estancias** | `GET /users/:id/history` | Historial de estancias completadas (no confundir con `/mine`). |
+| **Ampliar estancia** | `PATCH /bookings/:id/extend-stay` | Prolongar salida; refresca `/mine` si cambia habitación. |
+| **Flexibilidad** | `GET /bookings/:id/flexibility`, `PATCH request-early-checkin`, `PATCH request-late-checkout` | Preview de tarifa, solicitar horas extra el mismo día. |
+| **Actividad / auditoría** | `GET /reservation/:id/audit` | Textos amigables del historial de cambios de una reserva. |
